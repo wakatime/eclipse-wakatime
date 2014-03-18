@@ -1,0 +1,15 @@
+.DS_Store
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# Eclipse meta data
+.metadata
+.classpath
+.project
+.settings/
+local.properties
+bin/

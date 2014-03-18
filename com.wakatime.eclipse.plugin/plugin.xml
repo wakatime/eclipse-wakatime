@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.startup">
+      <startup></startup>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            name="Settings"
+            id="com.wakatime.eclipse.plugin.commands.category">
+      </category>
+      <command
+            name="API Key"
+            categoryId="com.wakatime.eclipse.plugin.commands.category"
+            id="com.wakatime.eclipse.plugin.commands.menuCommand">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            commandId="com.wakatime.eclipse.plugin.commands.menuCommand"
+            class="com.wakatime.eclipse.plugin.MenuHandler">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="com.wakatime.eclipse.plugin.commands.menuCommand"
+            contextId="org.eclipse.ui.contexts.window"
+            sequence="M1+6"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
+      </key>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="menu:file?after=additions">
+         <menu
+               label="WakaTime"
+               mnemonic="M"
+               id="com.wakatime.eclipse.plugin.menu">
+            <command
+                  commandId="com.wakatime.eclipse.plugin.commands.menuCommand"
+                  mnemonic="S"
+                  id="com.wakatime.eclipse.plugin.menu">
+            </command>
+         </menu>
+      </menuContribution>
+   </extension>
+</plugin>
