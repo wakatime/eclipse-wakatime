@@ -8,7 +8,7 @@ Installation
 
 Heads Up! WakaTime depends on [Python](http://www.python.org/getit/) being installed to work correctly.
 
-1. Download the [plugin](https://github.com/wakatime/eclipse-wakatime/releases/download/1.0.0/wakatime.zip).
+1. Download the [plugin](https://github.com/wakatime/eclipse-wakatime/releases/download/1.0.1/wakatime-1.0.1.zip).
 
 2. Extract the zip file to your computer.
 
