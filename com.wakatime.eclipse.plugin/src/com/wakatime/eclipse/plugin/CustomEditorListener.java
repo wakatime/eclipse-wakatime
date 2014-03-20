@@ -23,73 +23,73 @@ import org.eclipse.ui.IURIEditorInput;
 
 public class CustomEditorListener implements IPartListener2 {
 
-	@Override
-	public void partActivated(IWorkbenchPartReference partRef) {
-		IEditorPart part = partRef.getPage().getActiveEditor();
-		if (!(part instanceof AbstractTextEditor))
-			return;
+    @Override
+    public void partActivated(IWorkbenchPartReference partRef) {
+        IEditorPart part = partRef.getPage().getActiveEditor();
+        if (!(part instanceof AbstractTextEditor))
+            return;
 
-		// log new active file
-		IEditorInput input = part.getEditorInput();
-		if (input instanceof IURIEditorInput) {
-			URI uri = ((IURIEditorInput)input).getURI();
-			if (uri != null && uri.getPath() != null) {
-				String currentFile = uri.getPath();
-				long currentTime = System.currentTimeMillis() / 1000;
-				if (!currentFile.equals(Activator.getDefault().lastFile) || Activator.getDefault().lastTime + Activator.FREQUENCY * 60 < currentTime) {
-					Activator.logFile(currentFile, false);
-					Activator.getDefault().lastFile = currentFile;
-					Activator.getDefault().lastTime = currentTime;
-				}
-			}
-		}
-	}
+        // log new active file
+        IEditorInput input = part.getEditorInput();
+        if (input instanceof IURIEditorInput) {
+            URI uri = ((IURIEditorInput)input).getURI();
+            if (uri != null && uri.getPath() != null) {
+                String currentFile = uri.getPath();
+                long currentTime = System.currentTimeMillis() / 1000;
+                if (!currentFile.equals(Activator.getDefault().lastFile) || Activator.getDefault().lastTime + Activator.FREQUENCY * 60 < currentTime) {
+                    Activator.logFile(currentFile, false);
+                    Activator.getDefault().lastFile = currentFile;
+                    Activator.getDefault().lastTime = currentTime;
+                }
+            }
+        }
+    }
 
-	@Override
-	public void partBroughtToTop(IWorkbenchPartReference partRef) {
-		// TODO Auto-generated method stub
+    @Override
+    public void partBroughtToTop(IWorkbenchPartReference partRef) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	@Override
-	public void partClosed(IWorkbenchPartReference partRef) {
-		// TODO Auto-generated method stub
+    @Override
+    public void partClosed(IWorkbenchPartReference partRef) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	@Override
-	public void partDeactivated(IWorkbenchPartReference partRef) {
-		// TODO Auto-generated method stub
+    @Override
+    public void partDeactivated(IWorkbenchPartReference partRef) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	@Override
-	public void partOpened(IWorkbenchPartReference partRef) {
+    @Override
+    public void partOpened(IWorkbenchPartReference partRef) {
 
-		// listen for caret movement
-		try {
-			AbstractTextEditor e = (AbstractTextEditor)((IEditorReference) partRef).getEditor(false);
-			((StyledText)e.getAdapter(Control.class)).addCaretListener(new CustomCaretListener());
-		} catch (Exception e) {
-		}
-	}
+        // listen for caret movement
+        try {
+            AbstractTextEditor e = (AbstractTextEditor)((IEditorReference) partRef).getEditor(false);
+            ((StyledText)e.getAdapter(Control.class)).addCaretListener(new CustomCaretListener());
+        } catch (Exception e) {
+        }
+    }
 
-	@Override
-	public void partHidden(IWorkbenchPartReference partRef) {
-		// TODO Auto-generated method stub
+    @Override
+    public void partHidden(IWorkbenchPartReference partRef) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	@Override
-	public void partVisible(IWorkbenchPartReference partRef) {
-		// TODO Auto-generated method stub
+    @Override
+    public void partVisible(IWorkbenchPartReference partRef) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	@Override
-	public void partInputChanged(IWorkbenchPartReference partRef) {
-		// TODO Auto-generated method stub
+    @Override
+    public void partInputChanged(IWorkbenchPartReference partRef) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
 }
