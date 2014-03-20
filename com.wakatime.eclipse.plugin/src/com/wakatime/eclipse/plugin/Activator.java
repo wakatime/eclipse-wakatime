@@ -53,6 +53,8 @@ public class Activator extends AbstractUIPlugin implements IStartup {
 	// frequency of pings in minuts
 	public static final long FREQUENCY = 2;
 	public static final String CONFIG = ".wakatime.cfg";
+	public static final String VERSION = Platform.getBundle(PLUGIN_ID).getVersion().toString();
+	public static final String ECLIPSE_VERSION = Platform.getBundle("org.eclipse.platform").getVersion().toString();
 
 	public String lastFile;
 	public long lastTime = 0;
@@ -168,7 +170,7 @@ public class Activator extends AbstractUIPlugin implements IStartup {
 		cmds.add("--file");
 		cmds.add(file);
 		cmds.add("--plugin");
-		cmds.add("eclipse/1.0.0");
+		cmds.add("eclipse/"+ECLIPSE_VERSION+" eclipse-wakatime/"+VERSION);
 		if (isWrite)
 			cmds.add("--write");
 		try {
