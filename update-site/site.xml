@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site
+      digestURL="https://raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/">
+   <description name="WakaTime" url="https://raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/">
+      Fully automatic time tracking for Eclipse.
+   </description>
+   <feature url="features/com.wakatime.eclipse.feature_1.0.2.jar" id="com.wakatime.eclipse.feature" version="1.0.2"/>
+</site>
