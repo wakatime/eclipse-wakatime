@@ -60,7 +60,7 @@ public class CustomExecutionListener implements IExecutionListener {
                     long currentTime = System.currentTimeMillis() / 1000;
 
                     // always log writes
-                    Activator.logFile(currentFile, false);
+                    Activator.logFile(currentFile, true);
                     Activator.getDefault().lastFile = currentFile;
                     Activator.getDefault().lastTime = currentTime;
                 }

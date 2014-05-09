@@ -32,7 +32,7 @@ public class CustomCaretListener implements CaretListener {
         if (window.getPartService().getActivePart().getSite().getPage() == null) return;
         if (window.getPartService().getActivePart().getSite().getPage().getActiveEditor() == null) return;
         if (window.getPartService().getActivePart().getSite().getPage().getActiveEditor().getEditorInput() == null) return;
-
+        
         // log file if one is opened by default
         IEditorInput input = window.getPartService().getActivePart().getSite().getPage().getActiveEditor().getEditorInput();
         if (input instanceof IURIEditorInput) {
