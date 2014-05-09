@@ -10,3 +10,4 @@
 .settings/
 local.properties
 bin/
+dependencies/
