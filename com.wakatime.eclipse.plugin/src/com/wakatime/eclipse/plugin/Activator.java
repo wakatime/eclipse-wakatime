@@ -41,7 +41,7 @@ import org.osgi.framework.BundleContext;
 public class Activator extends AbstractUIPlugin implements IStartup {
 
     // The plug-in ID
-    public static final String PLUGIN_ID = "com.wakatime.eclipse.plugin"; //$NON-NLS-1$
+    public static final String PLUGIN_ID = "com.wakatime.eclipse.plugin";
 
     // The shared instance
     private static Activator plugin;
@@ -50,8 +50,8 @@ public class Activator extends AbstractUIPlugin implements IStartup {
     private static CustomEditorListener editorListener;
     private static IExecutionListener executionListener;
 
-    // frequency of pings in minuts
-    public static final long FREQUENCY = 2;
+    // Constants
+    public static final long FREQUENCY = 2; // frequency of pings in minutes
     public static final String CONFIG = ".wakatime.cfg";
     public static final String VERSION = Platform.getBundle(PLUGIN_ID).getVersion().toString();
     public static final String ECLIPSE_VERSION = Platform.getBundle("org.eclipse.platform").getVersion().toString();
@@ -70,7 +70,7 @@ public class Activator extends AbstractUIPlugin implements IStartup {
      * @see org.eclipse.ui.plugin.AbstractUIPlugin#start(org.osgi.framework.BundleContext)
      */
     public void start(BundleContext context) throws Exception {
-        System.out.println("Initializing WakaTime plugin (https://wakatime.com)");
+        System.out.println("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
         super.start(context);
         plugin = this;
 
