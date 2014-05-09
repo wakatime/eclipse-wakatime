@@ -10,11 +10,11 @@ Heads Up! WakaTime on OS X depends on Xcode being installed to work correctly.
 
 1. Add WakaTime to your Eclipse as a new `Update Site`.
 
-`Help` -> `Install New Software...`. Click `Add...` then enter this url:
+Click `Help` -> `Install New Software...` -> `Add...` then enter this url:
 
     https://raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/
 
-[more details about this step...](http://marketplace.eclipse.org/updatesite/help?url=https%3A//raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/)
+[more info...](http://marketplace.eclipse.org/updatesite/help?url=https%3A//raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/)
 
 2. Make sure `WakaTime` is checked, then click `Next` to install the plugin.
 
