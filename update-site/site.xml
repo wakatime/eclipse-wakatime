@@ -4,7 +4,7 @@
    <description name="WakaTime" url="https://raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/">
       Fully automatic time tracking for Eclipse.
    </description>
-   <feature url="features/com.wakatime.eclipse.feature_1.0.3.jar" id="com.wakatime.eclipse.feature" version="1.0.3">
+   <feature url="features/com.wakatime.eclipse.feature_1.0.4.jar" id="com.wakatime.eclipse.feature" version="1.0.4">
       <category name="com.wakatime.eclipse.category"/>
    </feature>
    <category-def name="com.wakatime.eclipse.category" label="WakaTime"/>
