@@ -7,10 +7,10 @@ Bundle-Activator: com.wakatime.eclipse.plugin.Activator
 Bundle-Vendor: WAKATIME
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
- org.eclipse.ui.editors;bundle-version="3.8.100",
- org.eclipse.ui.ide;bundle-version="3.9.2",
- org.eclipse.jface.text;bundle-version="3.8.101",
- org.apache.httpcomponents.httpclient;bundle-version="4.1.3",
- org.apache.httpcomponents.httpcore;bundle-version="4.1.4"
+ org.eclipse.ui.ide,
+ org.eclipse.jface.text,
+ org.apache.httpcomponents.httpclient,
+ org.apache.httpcomponents.httpcore,
+ org.eclipse.ui.workbench.texteditor
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
