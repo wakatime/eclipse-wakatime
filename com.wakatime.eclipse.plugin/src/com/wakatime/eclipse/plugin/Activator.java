@@ -168,7 +168,7 @@ public class Activator extends AbstractUIPlugin implements IStartup {
         cmds.add("python");
         cmds.add(Activator.getWakaTimeCLI());
         cmds.add("--file");
-        cmds.add(file);
+        cmds.add(Activator.fixFilePath(file));
         cmds.add("--plugin");
         cmds.add("eclipse/"+ECLIPSE_VERSION+" eclipse-wakatime/"+VERSION);
         if (isWrite)
@@ -178,6 +178,10 @@ public class Activator extends AbstractUIPlugin implements IStartup {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    public static String fixFilePath(String file) {
+    	return file.replaceFirst("^C:\\\\([A-Z]:\\\\)", "$1");
     }
 
     public static String getWakaTimeCLI() {
