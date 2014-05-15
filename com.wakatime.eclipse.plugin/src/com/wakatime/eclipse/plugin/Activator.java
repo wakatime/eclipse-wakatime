@@ -179,9 +179,9 @@ public class Activator extends AbstractUIPlugin implements IStartup {
             e.printStackTrace();
         }
     }
-    
+
     public static String fixFilePath(String file) {
-    	return file.replaceFirst("^C:\\\\([A-Z]:\\\\)", "$1");
+    	return file.replaceFirst("^[\\\\/]([A-Z]:[\\\\/])", "$1");
     }
 
     public static String getWakaTimeCLI() {
