@@ -46,7 +46,7 @@ public class MenuHandler extends AbstractHandler {
     public String getApiKey() {
         String apiKey = "";
         File userHome = new File(System.getProperty("user.home"));
-        File configFile = new File(userHome, Activator.CONFIG);
+        File configFile = new File(userHome, WakaTime.CONFIG);
         BufferedReader br = null;
         try {
             br = new BufferedReader(new FileReader(configFile.getAbsolutePath()));
@@ -77,7 +77,7 @@ public class MenuHandler extends AbstractHandler {
 
     private void setApiKey(String apiKey) {
         File userHome = new File(System.getProperty("user.home"));
-        File configFile = new File(userHome, Activator.CONFIG);
+        File configFile = new File(userHome, WakaTime.CONFIG);
         BufferedReader br = null;
         StringBuilder sb = new StringBuilder();
         boolean found = false;

@@ -32,12 +32,12 @@ public class Dependencies {
     }
 
     public boolean areDependenciesInstalled() {
-        File cli = new File(Activator.getWakaTimeCLI());
+        File cli = new File(WakaTime.getWakaTimeCLI());
         return (cli.exists() && !cli.isDirectory());
     }
 
     public void installDependencies() {
-        File cli = new File(Activator.getWakaTimeCLI());
+        File cli = new File(WakaTime.getWakaTimeCLI());
         if (!cli.getParentFile().getParentFile().exists())
             cli.getParentFile().getParentFile().mkdirs();
 

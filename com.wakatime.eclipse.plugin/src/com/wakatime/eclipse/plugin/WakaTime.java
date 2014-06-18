@@ -1,5 +1,5 @@
 /* ==========================================================
-File:        Activator.java
+File:        WakaTime.java
 Description: Automatic time tracking for Eclipse.
 Maintainer:  WakaTime <support@wakatime.com>
 License:     BSD, see LICENSE for more details.
@@ -38,13 +38,13 @@ import org.osgi.framework.BundleContext;
 /**
  * The activator class controls the plug-in life cycle
  */
-public class Activator extends AbstractUIPlugin implements IStartup {
+public class WakaTime extends AbstractUIPlugin implements IStartup {
 
     // The plug-in ID
     public static final String PLUGIN_ID = "com.wakatime.eclipse.plugin";
 
     // The shared instance
-    private static Activator plugin;
+    private static WakaTime plugin;
 
     // Listeners
     private static CustomEditorListener editorListener;
@@ -62,7 +62,7 @@ public class Activator extends AbstractUIPlugin implements IStartup {
     /**
      * The constructor
      */
-    public Activator() {
+    public WakaTime() {
     }
 
     /*
@@ -139,10 +139,10 @@ public class Activator extends AbstractUIPlugin implements IStartup {
                     if (uri != null && uri.getPath() != null) {
                         String currentFile = uri.getPath();
                         long currentTime = System.currentTimeMillis() / 1000;
-                        if (!currentFile.equals(Activator.getDefault().lastFile) || Activator.getDefault().lastTime + Activator.FREQUENCY * 60 < currentTime) {
-                            Activator.logFile(currentFile, false);
-                            Activator.getDefault().lastFile = currentFile;
-                            Activator.getDefault().lastTime = currentTime;
+                        if (!currentFile.equals(WakaTime.getDefault().lastFile) || WakaTime.getDefault().lastTime + WakaTime.FREQUENCY * 60 < currentTime) {
+                            WakaTime.logFile(currentFile, false);
+                            WakaTime.getDefault().lastFile = currentFile;
+                            WakaTime.getDefault().lastTime = currentTime;
                         }
                     }
                 }
@@ -166,9 +166,9 @@ public class Activator extends AbstractUIPlugin implements IStartup {
     public static void logFile(String file, boolean isWrite) {
         ArrayList<String> cmds = new ArrayList<String>();
         cmds.add("python");
-        cmds.add(Activator.getWakaTimeCLI());
+        cmds.add(WakaTime.getWakaTimeCLI());
         cmds.add("--file");
-        cmds.add(Activator.fixFilePath(file));
+        cmds.add(WakaTime.fixFilePath(file));
         cmds.add("--plugin");
         cmds.add("eclipse/"+ECLIPSE_VERSION+" eclipse-wakatime/"+VERSION);
         if (isWrite)
@@ -205,7 +205,7 @@ public class Activator extends AbstractUIPlugin implements IStartup {
      *
      * @return the shared instance
      */
-    public static Activator getDefault() {
+    public static WakaTime getDefault() {
         return plugin;
     }
 
