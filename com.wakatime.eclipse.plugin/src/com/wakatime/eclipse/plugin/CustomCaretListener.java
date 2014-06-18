@@ -43,7 +43,7 @@ public class CustomCaretListener implements CaretListener {
                 if (!currentFile.equals(WakaTime.getDefault().lastFile) || WakaTime.getDefault().lastTime + WakaTime.FREQUENCY * 60 < currentTime) {
                     WakaTime.logFile(currentFile, false);
                     WakaTime.getDefault().lastFile = currentFile;
-                    WakaTIme.getDefault().lastTime = currentTime;
+                    WakaTime.getDefault().lastTime = currentTime;
                 }
             }
         }
