@@ -11,6 +11,7 @@ package com.wakatime.eclipse.plugin;
 
 import java.net.URI;
 
+
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IEditorInput;
@@ -37,7 +38,7 @@ public class CustomEditorListener implements IPartListener2 {
                 String currentFile = uri.getPath();
                 long currentTime = System.currentTimeMillis() / 1000;
                 if (!currentFile.equals(WakaTime.getDefault().lastFile) || WakaTime.getDefault().lastTime + WakaTime.FREQUENCY * 60 < currentTime) {
-                    WakaTime.logFile(currentFile, false);
+                    WakaTime.logFile(currentFile, WakaTime.getActiveProject(), false);
                     WakaTime.getDefault().lastFile = currentFile;
                     WakaTime.getDefault().lastTime = currentTime;
                 }

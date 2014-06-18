@@ -41,7 +41,7 @@ public class CustomCaretListener implements CaretListener {
                 String currentFile = uri.getPath();
                 long currentTime = System.currentTimeMillis() / 1000;
                 if (!currentFile.equals(WakaTime.getDefault().lastFile) || WakaTime.getDefault().lastTime + WakaTime.FREQUENCY * 60 < currentTime) {
-                    WakaTime.logFile(currentFile, false);
+                    WakaTime.logFile(currentFile, WakaTime.getActiveProject(), false);
                     WakaTime.getDefault().lastFile = currentFile;
                     WakaTime.getDefault().lastTime = currentTime;
                 }

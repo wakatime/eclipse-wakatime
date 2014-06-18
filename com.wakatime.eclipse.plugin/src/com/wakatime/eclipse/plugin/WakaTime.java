@@ -15,6 +15,7 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import org.eclipse.core.commands.IExecutionListener;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -30,6 +31,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
+import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.osgi.framework.Bundle;
@@ -140,7 +142,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                         String currentFile = uri.getPath();
                         long currentTime = System.currentTimeMillis() / 1000;
                         if (!currentFile.equals(WakaTime.getDefault().lastFile) || WakaTime.getDefault().lastTime + WakaTime.FREQUENCY * 60 < currentTime) {
-                            WakaTime.logFile(currentFile, false);
+                            WakaTime.logFile(currentFile, WakaTime.getActiveProject(), false);
                             WakaTime.getDefault().lastFile = currentFile;
                             WakaTime.getDefault().lastTime = currentTime;
                         }
@@ -163,7 +165,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             window.getPartService().removePartListener(editorListener);
     }
 
-    public static void logFile(String file, boolean isWrite) {
+    public static void logFile(String file, String project, boolean isWrite) {
         ArrayList<String> cmds = new ArrayList<String>();
         cmds.add("python");
         cmds.add(WakaTime.getWakaTimeCLI());
@@ -171,6 +173,10 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         cmds.add(WakaTime.fixFilePath(file));
         cmds.add("--plugin");
         cmds.add("eclipse/"+ECLIPSE_VERSION+" eclipse-wakatime/"+VERSION);
+        if (project != null) {
+            cmds.add("--project");
+            cmds.add(project);
+        }
         if (isWrite)
             cmds.add("--write");
         try {
@@ -180,8 +186,33 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         }
     }
 
+    public static String getActiveProject() {
+        IWorkbench workbench = PlatformUI.getWorkbench();
+        IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
+        if (window == null) return null;
+        if (window.getPartService() == null) return null;
+        if (window.getPartService().getActivePart() == null) return null;
+        if (window.getPartService().getActivePart().getSite() == null) return null;
+        if (window.getPartService().getActivePart().getSite().getPage() == null) return null;
+        if (window.getPartService().getActivePart().getSite().getPage().getActiveEditor() == null) return null;
+        if (window.getPartService().getActivePart().getSite().getPage().getActiveEditor().getEditorInput() == null) return null;
+
+        IEditorInput input = window.getPartService().getActivePart().getSite().getPage().getActiveEditor().getEditorInput();
+
+        IProject project = null;
+
+        if (input instanceof FileEditorInput) {
+            project = ((FileEditorInput)input).getFile().getProject();
+        }
+
+        if (project == null)
+            return null;
+
+        return project.getName();
+    }
+
     public static String fixFilePath(String file) {
-    	return file.replaceFirst("^[\\\\/]([A-Z]:[\\\\/])", "$1");
+        return file.replaceFirst("^[\\\\/]([A-Z]:[\\\\/])", "$1");
     }
 
     public static String getWakaTimeCLI() {
