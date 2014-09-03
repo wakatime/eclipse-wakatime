@@ -16,19 +16,52 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 public class Dependencies {
-    /**
-     * The constructor.
-     */
+
+    private static String pythonLocation = null;
+
     public Dependencies() {
     }
 
     public boolean isPythonInstalled() {
-        try {
-            Runtime.getRuntime().exec("python");
-        } catch (IOException e) {
-            return false;
+        return Dependencies.getPythonLocation() != null;
+    }
+
+    public static String getPythonLocation() {
+        if (Dependencies.pythonLocation != null)
+            return Dependencies.pythonLocation;
+        String []paths = new String[] {
+                "pythonw",
+                "python",
+                "usr/bin/python",
+                "\\python37\\pythonw",
+                "\\python36\\pythonw",
+                "\\python35\\pythonw",
+                "\\python34\\pythonw",
+                "\\python33\\pythonw",
+                "\\python32\\pythonw",
+                "\\python31\\pythonw",
+                "\\python30\\pythonw",
+                "\\python27\\pythonw",
+                "\\python26\\pythonw",
+                "\\python37\\python",
+                "\\python36\\python",
+                "\\python35\\python",
+                "\\python34\\python",
+                "\\python33\\python",
+                "\\python32\\python",
+                "\\python31\\python",
+                "\\python30\\python",
+                "\\python27\\python",
+                "\\python26\\python",
+        };
+        for (int i=0; i<paths.length; i++) {
+            try {
+                Runtime.getRuntime().exec(paths[i]);
+                Dependencies.pythonLocation = paths[i];
+                break;
+            } catch (Exception e) { }
         }
-        return true;
+        return Dependencies.pythonLocation;
     }
 
     public boolean areDependenciesInstalled() {

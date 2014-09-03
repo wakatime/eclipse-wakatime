@@ -53,7 +53,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     private static IExecutionListener executionListener;
 
     // Constants
-    public static final long FREQUENCY = 2; // frequency of pings in minutes
+    public static final long FREQUENCY = 2; // frequency of heartbeats in minutes
     public static final String CONFIG = ".wakatime.cfg";
     public static final String VERSION = Platform.getBundle(PLUGIN_ID).getVersion().toString();
     public static final String ECLIPSE_VERSION = Platform.getBundle("org.eclipse.platform").getVersion().toString();
