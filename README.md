@@ -13,14 +13,13 @@ Heads Up! WakaTime on OS X depends on Xcode being installed to work correctly.
 
 2. Make sure `WakaTime` is checked, then click `Next` to install the plugin.
 
-3. You will see a prompt asking for your [api key](https://wakatime.com/#apikey). Enter your api key, then click `OK`.
+3. Enter your [api key](https://wakatime.com/settings#apikey) from https://wakatime.com/settings#apikey, then click `OK`.
 
-4. Use Eclipse and your time will automatically be tracked for you.
+4. Use Eclipse and your time will be tracked for you automatically.
 
 5. Visit https://wakatime.com to see your logged time.
 
 Screen Shots
 ------------
 
-![Project Overview](https://wakatime.com/static/img/ScreenShots/ScreenShot_2014-09-15.png)
-
+![Project Overview](https://wakatime.com/static/img/ScreenShots/ScreenShot-2014-10-29.png)
