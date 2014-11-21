@@ -45,7 +45,7 @@ public class MenuHandler extends AbstractHandler {
     public void promptForApiKey(IWorkbenchWindow window) {
         String apiKey = this.getApiKey();
         InputDialog dialog = new InputDialog(window.getShell(),
-            "WakaTime API Key", "Please enter your api key from http://wakatime.com/#apikey", apiKey, null);
+            "WakaTime API Key", "Please enter your api key from http://wakatime.com/settings#apikey", apiKey, null);
         if (dialog.open() == IStatus.OK) {
           apiKey = dialog.getValue();
           this.setApiKey(apiKey);
