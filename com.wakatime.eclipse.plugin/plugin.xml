@@ -3,7 +3,7 @@
 <plugin>
    <extension
          point="org.eclipse.ui.startup">
-      <startup></startup>
+      <startup class="com.wakatime.eclipse.plugin.WakaTime" />
    </extension>
    <extension
          point="org.eclipse.ui.commands">
