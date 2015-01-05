@@ -2,7 +2,7 @@
 <feature
       id="com.wakatime.eclipse.feature"
       label="WakaTime"
-      version="1.0.10"
+      version="1.1.0"
       provider-name="WAKATIME">
 
    <description url="https://wakatime.com">
@@ -28,7 +28,7 @@ modification, are permitted provided that the following conditions are met:
   in the documentation and/or other materials provided
   with the distribution.
 
-* Neither the names of Wakatime or WakaTime, nor the names of its
+* Neither the names of WakaTime, nor the names of its
   contributors may be used to endorse or promote products derived
   from this software without specific prior written permission.
 
@@ -49,7 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          id="com.wakatime.eclipse.plugin"
          download-size="0"
          install-size="0"
-         version="1.0.10"
+         version="1.1.0"
          unpack="false"/>
 
 </feature>
