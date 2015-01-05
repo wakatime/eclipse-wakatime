@@ -101,15 +101,19 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                 }
 
                 Dependencies deps = new Dependencies();
+
                 if (!deps.isPythonInstalled()) {
-                    MessageDialog dialog = new MessageDialog(window.getShell(),
-                        "Warning!", null,
-                        "WakaTime needs Python installed. Please install Python, then restart Eclipse.",
-                        MessageDialog.WARNING, new String[]{IDialogConstants.OK_LABEL}, 0);
-                    dialog.open();
+                    deps.installPython();
+                    if (!deps.isPythonInstalled()) {
+                        MessageDialog dialog = new MessageDialog(window.getShell(),
+                            "Warning!", null,
+                            "WakaTime needs Python installed. Please install Python from python.org/downloads, then restart Eclipse.",
+                            MessageDialog.WARNING, new String[]{IDialogConstants.OK_LABEL}, 0);
+                        dialog.open();
+                    }
                 }
-                if (!deps.areDependenciesInstalled()) {
-                    deps.installDependencies();
+                if (!deps.isCLIInstalled()) {
+                    deps.installCLI();
                 }
 
                 if (window.getPartService() == null) return;

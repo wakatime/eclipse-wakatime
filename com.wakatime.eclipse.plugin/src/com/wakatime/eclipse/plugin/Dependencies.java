@@ -15,6 +15,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -73,47 +74,97 @@ public class Dependencies {
         return Dependencies.pythonLocation;
     }
 
-    public boolean areDependenciesInstalled() {
+    public void installPython() {
+        if (System.getProperty("os.name").contains("Windows")) {
+            String url = "https://www.python.org/ftp/python/3.4.2/python-3.4.2.msi";
+            if (System.getenv("ProgramFiles(x86)") != null) {
+                url = "https://www.python.org/ftp/python/3.4.2/python-3.4.2.amd64.msi";
+            }
+            
+            File cli = new File(WakaTime.getWakaTimeCLI());
+            String outFile = cli.getParentFile().getParentFile().getAbsolutePath()+File.separator+"python.msi";
+            if (downloadFile(url, outFile)) {
+
+                // execute python msi installer
+                ArrayList<String> cmds = new ArrayList<String>();
+                cmds.add("msiexec");
+                cmds.add("/i");
+                cmds.add(outFile);
+                cmds.add("/norestart");
+                cmds.add("/qb!");
+                try {
+                    Runtime.getRuntime().exec(cmds.toArray(new String[cmds.size()]));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public boolean isCLIInstalled() {
         File cli = new File(WakaTime.getWakaTimeCLI());
         return (cli.exists() && !cli.isDirectory());
     }
 
-    public void installDependencies() {
+    public void installCLI() {
         File cli = new File(WakaTime.getWakaTimeCLI());
-        if (!cli.getParentFile().getParentFile().exists())
-            cli.getParentFile().getParentFile().mkdirs();
 
         String url = "https://codeload.github.com/wakatime/wakatime/zip/master";
         String zipFile = cli.getParentFile().getParentFile().getAbsolutePath()+File.separator+"wakatime.zip";
         File outputDir = cli.getParentFile().getParentFile();
 
         // download wakatime-master.zip file
+        if (downloadFile(url, zipFile)) {
+
+            // unzip wakatime.zip file
+            try {
+                System.out.println("Extracting wakatime.zip ...");
+                this.unzip(zipFile, outputDir);
+                File oldZipFile = new File(zipFile);
+                oldZipFile.delete();
+                System.out.println("Finished installing WakaTime dependencies.");
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public boolean downloadFile(String url, String saveAs) {
+        File outFile = new File(saveAs);
+
+        // create output directory if does not exist
+        File outDir = outFile.getParentFile();
+        if (!outDir.exists())
+            outDir.mkdirs();
+
+        System.out.println("Downloading " + url + " to " + outFile.toString());
+
         DefaultHttpClient httpclient = new DefaultHttpClient();
         HttpGet httpget = new HttpGet(url);
-        HttpResponse response = null;
         try {
-            response = httpclient.execute(httpget);
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        HttpEntity entity = response.getEntity();
-        try {
-            System.out.println("Downloading wakatime-cli to wakatime.zip ...");
-            DataOutputStream os = new DataOutputStream(new FileOutputStream(zipFile));
+
+            // download file
+            HttpResponse response = httpclient.execute(httpget);
+            HttpEntity entity = response.getEntity();
+
+            // save file contents
+            DataOutputStream os = new DataOutputStream(new FileOutputStream(outFile));
             entity.writeTo(os);
             os.close();
-            System.out.println("Extracting wakatime.zip ...");
-            this.unzip(zipFile, outputDir);
-            File oldZipFile = new File(zipFile);
-            oldZipFile.delete();
-            System.out.println("Finished installing WakaTime dependencies.");
+
+            return true;
+
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        return false;
     }
 
     private void unzip(String zipFile, File outputDir) throws IOException {
