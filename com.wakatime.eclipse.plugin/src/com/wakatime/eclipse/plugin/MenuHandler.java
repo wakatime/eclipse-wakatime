@@ -54,32 +54,13 @@ public class MenuHandler extends AbstractHandler {
 
     public String getApiKey() {
         String apiKey = "";
-        File userHome = new File(System.getProperty("user.home"));
-        File configFile = new File(userHome, WakaTime.CONFIG);
-        BufferedReader br = null;
-        try {
-            br = new BufferedReader(new FileReader(configFile.getAbsolutePath()));
-        } catch (FileNotFoundException e1) {
-        }
-        if (br != null) {
-            try {
-                String line = br.readLine();
-                while (line != null) {
-                    String[] parts = line.split("=");
-                    if (parts.length == 2 && parts[0].trim().equals("api_key")) {
-                        apiKey = parts[1].trim();
-                    }
-                    line = br.readLine();
-                }
-            } catch (IOException e) {
-                WakaTime.error("Error", e);
-            } finally {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    WakaTime.error("Error", e);
-                }
-            }
+        String setting = getSetting("api_key");
+        if (setting != null)
+        	apiKey = setting;
+        if (apiKey.equals("")) {
+	        String secondSetting = getSetting("apikey");
+	        if (secondSetting != null)
+	        	apiKey = secondSetting;
         }
         return apiKey;
     }
@@ -135,5 +116,45 @@ public class MenuHandler extends AbstractHandler {
             writer.print(sb.toString());
             writer.close();
         }
+    }
+
+    public boolean getDebug() {
+        boolean debug = false;
+        String debugSetting = getSetting("debug");
+        if (debugSetting != null && debugSetting.equals("true"))
+        	debug = true;
+        return debug;
+    }
+
+    public String getSetting(String name) {
+        String value = null;
+        File userHome = new File(System.getProperty("user.home"));
+        File configFile = new File(userHome, WakaTime.CONFIG);
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new FileReader(configFile.getAbsolutePath()));
+        } catch (FileNotFoundException e1) {
+        }
+        if (br != null) {
+            try {
+                String line = br.readLine();
+                while (line != null) {
+                    String[] parts = line.split("=");
+                    if (parts.length == 2 && parts[0].trim().equals(name)) {
+                        value = parts[1].trim();
+                    }
+                    line = br.readLine();
+                }
+            } catch (IOException e) {
+                WakaTime.error("Error", e);
+            } finally {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    WakaTime.error("Error", e);
+                }
+            }
+        }
+        return value;
     }
 }

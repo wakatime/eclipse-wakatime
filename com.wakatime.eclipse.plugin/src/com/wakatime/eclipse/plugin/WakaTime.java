@@ -9,7 +9,9 @@ Website:     https://wakatime.com/
 
 package com.wakatime.eclipse.plugin;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -50,6 +52,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     // The shared instance
     private static WakaTime plugin;
     private static ILog logInstance;
+    private static boolean DEBUG = false;
 
     // Listeners
     private static CustomEditorListener editorListener;
@@ -76,11 +79,12 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
      * @see org.eclipse.ui.plugin.AbstractUIPlugin#start(org.osgi.framework.BundleContext)
      */
     public void start(BundleContext context) throws Exception {
-        log("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
+    	logInstance = getLog();
+        WakaTime.log("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
+        
         super.start(context);
         plugin = this;
         
-        logInstance = getLog();
 
         editorListener = new CustomEditorListener();
     }
@@ -101,6 +105,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
                 // prompt for apiKey if not set
                 MenuHandler handler = new MenuHandler();
+                DEBUG = handler.getDebug();
                 String apiKey = handler.getApiKey();
                 if (apiKey == "") {
                     handler.promptForApiKey(window);
@@ -158,6 +163,8 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                         }
                     }
                 }
+                
+                WakaTime.log("Finished initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
             }
         });
     }
@@ -189,8 +196,25 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         }
         if (isWrite)
             cmds.add("--write");
+        if (DEBUG)
+        	WakaTime.log(cmds.toString());
         try {
-            Runtime.getRuntime().exec(cmds.toArray(new String[cmds.size()]));
+        	Process proc = Runtime.getRuntime().exec(cmds.toArray(new String[cmds.size()]));
+        	if (DEBUG) {
+                BufferedReader stdInput = new BufferedReader(new
+                        InputStreamReader(proc.getInputStream()));
+                BufferedReader stdError = new BufferedReader(new
+                        InputStreamReader(proc.getErrorStream()));
+                proc.waitFor();
+                String s;
+                while ((s = stdInput.readLine()) != null) {
+                    WakaTime.log(s);
+                }
+                while ((s = stdError.readLine()) != null) {
+                    WakaTime.log(s);
+                }
+                WakaTime.log("Command finished with return value: "+proc.exitValue());
+            }
         } catch (Exception e) {
         	WakaTime.error("Error", e);
         }
