@@ -72,12 +72,12 @@ public class MenuHandler extends AbstractHandler {
                     line = br.readLine();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                WakaTime.error("Error", e);
             } finally {
                 try {
                     br.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    WakaTime.error("Error", e);
                 }
             }
         }
@@ -108,12 +108,12 @@ public class MenuHandler extends AbstractHandler {
                     line = br.readLine();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                WakaTime.error("Error", e);
             } finally {
                 try {
                     br.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    WakaTime.error("Error", e);
                 }
             }
         }
@@ -127,9 +127,9 @@ public class MenuHandler extends AbstractHandler {
         try {
             writer = new PrintWriter(configFile.getAbsolutePath(), "UTF-8");
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            WakaTime.error("Error", e);
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            WakaTime.error("Error", e);
         }
         if (writer != null) {
             writer.print(sb.toString());

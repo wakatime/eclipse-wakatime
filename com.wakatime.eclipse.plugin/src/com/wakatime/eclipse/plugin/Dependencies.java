@@ -42,7 +42,8 @@ public class Dependencies {
         String []paths = new String[] {
                 "pythonw",
                 "python",
-                "usr/bin/python",
+                "/usr/local/bin/python",
+                "/usr/bin/python",
                 "\\python37\\pythonw",
                 "\\python36\\pythonw",
                 "\\python35\\pythonw",
@@ -80,7 +81,7 @@ public class Dependencies {
             if (System.getenv("ProgramFiles(x86)") != null) {
                 url = "https://www.python.org/ftp/python/3.4.2/python-3.4.2.amd64.msi";
             }
-            
+
             File cli = new File(WakaTime.getWakaTimeCLI());
             String outFile = cli.getParentFile().getParentFile().getAbsolutePath()+File.separator+"python.msi";
             if (downloadFile(url, outFile)) {
@@ -95,7 +96,7 @@ public class Dependencies {
                 try {
                     Runtime.getRuntime().exec(cmds.toArray(new String[cmds.size()]));
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    WakaTime.error("Error", e);
                 }
             }
         }
@@ -118,15 +119,15 @@ public class Dependencies {
 
             // unzip wakatime.zip file
             try {
-                System.out.println("Extracting wakatime.zip ...");
+                WakaTime.log("Extracting wakatime.zip ...");
                 this.unzip(zipFile, outputDir);
                 File oldZipFile = new File(zipFile);
                 oldZipFile.delete();
-                System.out.println("Finished installing WakaTime dependencies.");
+                WakaTime.log("Finished installing WakaTime dependencies.");
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                WakaTime.error("Error", e);
             } catch (IOException e) {
-                e.printStackTrace();
+                WakaTime.error("Error", e);
             }
         }
     }
@@ -139,7 +140,7 @@ public class Dependencies {
         if (!outDir.exists())
             outDir.mkdirs();
 
-        System.out.println("Downloading " + url + " to " + outFile.toString());
+        WakaTime.log("Downloading " + url + " to " + outFile.toString());
 
         DefaultHttpClient httpclient = new DefaultHttpClient();
         HttpGet httpget = new HttpGet(url);
@@ -157,11 +158,11 @@ public class Dependencies {
             return true;
 
         } catch (ClientProtocolException e) {
-            e.printStackTrace();
+            WakaTime.error("Error", e);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            WakaTime.error("Error", e);
         } catch (IOException e) {
-            e.printStackTrace();
+            WakaTime.error("Error", e);
         }
 
         return false;
@@ -180,10 +181,10 @@ public class Dependencies {
             File newFile = new File(outputDir, fileName);
 
             if (ze.isDirectory()) {
-                // System.out.println("Creating directory: "+newFile.getParentFile().getAbsolutePath());
+                // WakaTime.log("Creating directory: "+newFile.getParentFile().getAbsolutePath());
                 newFile.mkdirs();
             } else {
-                // System.out.println("Extracting File: "+newFile.getAbsolutePath());
+                // WakaTime.log("Extracting File: "+newFile.getAbsolutePath());
                 FileOutputStream fos = new FileOutputStream(newFile.getAbsolutePath());
                 int len;
                 while ((len = zis.read(buffer)) > 0) {

@@ -17,7 +17,9 @@ import java.util.ArrayList;
 import org.eclipse.core.commands.IExecutionListener;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.ILog;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -47,6 +49,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
     // The shared instance
     private static WakaTime plugin;
+    private static ILog logInstance;
 
     // Listeners
     private static CustomEditorListener editorListener;
@@ -57,6 +60,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public static final String CONFIG = ".wakatime.cfg";
     public static final String VERSION = Platform.getBundle(PLUGIN_ID).getVersion().toString();
     public static final String ECLIPSE_VERSION = Platform.getBundle("org.eclipse.platform").getVersion().toString();
+    
 
     public String lastFile;
     public long lastTime = 0;
@@ -72,9 +76,11 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
      * @see org.eclipse.ui.plugin.AbstractUIPlugin#start(org.osgi.framework.BundleContext)
      */
     public void start(BundleContext context) throws Exception {
-        System.out.println("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
+        log("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
         super.start(context);
         plugin = this;
+        
+        logInstance = getLog();
 
         editorListener = new CustomEditorListener();
     }
@@ -186,7 +192,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         try {
             Runtime.getRuntime().exec(cmds.toArray(new String[cmds.size()]));
         } catch (Exception e) {
-            e.printStackTrace();
+        	WakaTime.error("Error", e);
         }
     }
 
@@ -226,13 +232,30 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         try {
             rootURL = FileLocator.toFileURL(url);
         } catch (Exception e) {
-            e.printStackTrace();
+        	WakaTime.error("Error", e);
         }
         if (rootURL == null)
             return null;
         File rootDir = new File(rootURL.getPath());
         File script = new File(rootDir, "dependencies"+File.separator+"wakatime-master"+File.separator+"wakatime-cli.py");
         return script.getAbsolutePath();
+    }
+    
+    public static void log(String msg) {
+    	WakaTime.logMessage(msg, Status.INFO, null);
+    }
+    
+    public static void error(String msg) {
+    	WakaTime.logMessage(msg, Status.ERROR, null);
+    }
+    
+    public static void error(String msg, Exception e) {
+    	WakaTime.logMessage(msg, Status.ERROR, e);
+    }
+    
+    public static void logMessage(String msg, int level, Exception e) {
+    	if (logInstance != null)
+    		logInstance.log(new Status(level, PLUGIN_ID, Status.OK, msg, e));
     }
 
     /**
