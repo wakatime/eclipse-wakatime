@@ -261,7 +261,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         if (rootURL == null)
             return null;
         File rootDir = new File(rootURL.getPath());
-        File script = new File(rootDir, "dependencies"+File.separator+"wakatime-master"+File.separator+"wakatime-cli.py");
+        File script = new File(rootDir, "dependencies"+File.separator+"wakatime-master"+File.separator+"wakatime"+File.separator+"cli.py");
         return script.getAbsolutePath();
     }
     
