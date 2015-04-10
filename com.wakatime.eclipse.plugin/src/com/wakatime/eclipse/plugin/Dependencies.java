@@ -124,7 +124,7 @@ public class Dependencies {
 
     public boolean isCLIInstalled() {
         File cli = new File(WakaTime.getWakaTimeCLI());
-        return (cli.exists() && !cli.isDirectory());
+        return cli.exists();
     }
 
     public void installCLI() {

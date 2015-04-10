@@ -196,8 +196,10 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         }
         if (isWrite)
             cmds.add("--write");
-        if (DEBUG)
+        if (DEBUG) {
         	WakaTime.log(cmds.toString());
+        	cmds.add("--verbose");
+        }
         try {
         	Process proc = Runtime.getRuntime().exec(cmds.toArray(new String[cmds.size()]));
         	if (DEBUG) {
