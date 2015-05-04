@@ -102,10 +102,12 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             public void run() {
                 IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
                 if (window == null) return;
-
-                // prompt for apiKey if not set
+                
+                // setup config file parsing
                 MenuHandler handler = new MenuHandler();
                 DEBUG = handler.getDebug();
+
+                // prompt for apiKey if not set
                 String apiKey = handler.getApiKey();
                 if (apiKey == "") {
                     handler.promptForApiKey(window);
@@ -184,7 +186,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
     public static void logFile(String file, String project, boolean isWrite) {
         ArrayList<String> cmds = new ArrayList<String>();
-        cmds.add("python");
+        cmds.add(Dependencies.getPythonLocation());
         cmds.add(WakaTime.getWakaTimeCLI());
         cmds.add("--file");
         cmds.add(WakaTime.fixFilePath(file));
