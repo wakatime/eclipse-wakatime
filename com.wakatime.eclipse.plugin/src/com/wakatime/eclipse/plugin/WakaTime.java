@@ -63,7 +63,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public static final String CONFIG = ".wakatime.cfg";
     public static final String VERSION = Platform.getBundle(PLUGIN_ID).getVersion().toString();
     public static final String ECLIPSE_VERSION = Platform.getBundle("org.eclipse.platform").getVersion().toString();
-    
+
 
     public String lastFile;
     public long lastTime = 0;
@@ -79,12 +79,11 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
      * @see org.eclipse.ui.plugin.AbstractUIPlugin#start(org.osgi.framework.BundleContext)
      */
     public void start(BundleContext context) throws Exception {
-    	logInstance = getLog();
+        logInstance = getLog();
         WakaTime.log("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
-        
+
         super.start(context);
         plugin = this;
-        
 
         editorListener = new CustomEditorListener();
     }
@@ -102,7 +101,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             public void run() {
                 IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
                 if (window == null) return;
-                
+
                 // setup config file parsing
                 MenuHandler handler = new MenuHandler();
                 DEBUG = handler.getDebug();
@@ -165,7 +164,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                         }
                     }
                 }
-                
+
                 WakaTime.log("Finished initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
             }
         });
@@ -185,6 +184,37 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     }
 
     public static void logFile(String file, String project, boolean isWrite) {
+        final String[] cmds = buildCliCommands(file, project, isWrite);
+
+        if (DEBUG)
+            WakaTime.log(cmds.toString());
+
+        Runnable r = new Runnable() {
+            public void run() {
+                try {
+                     Process proc = Runtime.getRuntime().exec(cmds);
+                     if (DEBUG) {
+	                     BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+	                     BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+	                     proc.waitFor();
+	                     String s;
+	                     while ((s = stdInput.readLine()) != null) {
+	                         WakaTime.log(s);
+	                     }
+	                     while ((s = stdError.readLine()) != null) {
+	                         WakaTime.log(s);
+	                     }
+	                     WakaTime.log("Command finished with return value: "+proc.exitValue());
+                     }
+                 } catch (Exception e) {
+                     WakaTime.error("Error", e);
+                 }
+             }
+         };
+         new Thread(r).start();
+    }
+
+    public static String[] buildCliCommands(String file, String project,  boolean isWrite) {
         ArrayList<String> cmds = new ArrayList<String>();
         cmds.add(Dependencies.getPythonLocation());
         cmds.add(WakaTime.getWakaTimeCLI());
@@ -199,29 +229,10 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         if (isWrite)
             cmds.add("--write");
         if (DEBUG) {
-        	WakaTime.log(cmds.toString());
-        	cmds.add("--verbose");
+            WakaTime.log(cmds.toString());
+            cmds.add("--verbose");
         }
-        try {
-        	Process proc = Runtime.getRuntime().exec(cmds.toArray(new String[cmds.size()]));
-        	if (DEBUG) {
-                BufferedReader stdInput = new BufferedReader(new
-                        InputStreamReader(proc.getInputStream()));
-                BufferedReader stdError = new BufferedReader(new
-                        InputStreamReader(proc.getErrorStream()));
-                proc.waitFor();
-                String s;
-                while ((s = stdInput.readLine()) != null) {
-                    WakaTime.log(s);
-                }
-                while ((s = stdError.readLine()) != null) {
-                    WakaTime.log(s);
-                }
-                WakaTime.log("Command finished with return value: "+proc.exitValue());
-            }
-        } catch (Exception e) {
-        	WakaTime.error("Error", e);
-        }
+        return cmds.toArray(new String[cmds.size()]);
     }
 
     public static String getActiveProject() {
@@ -260,30 +271,29 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         try {
             rootURL = FileLocator.toFileURL(url);
         } catch (Exception e) {
-        	WakaTime.error("Error", e);
+            WakaTime.error("Error", e);
         }
         if (rootURL == null)
             return null;
-        File rootDir = new File(rootURL.getPath());
-        File script = new File(rootDir, "dependencies"+File.separator+"wakatime-master"+File.separator+"wakatime"+File.separator+"cli.py");
+        File script = new File(Dependencies.combinePaths(rootURL.getPath(), "dependencies", "wakatime-master", "wakatime", "cli.py"));
         return script.getAbsolutePath();
     }
-    
+
     public static void log(String msg) {
-    	WakaTime.logMessage(msg, Status.INFO, null);
+        WakaTime.logMessage(msg, Status.INFO, null);
     }
-    
+
     public static void error(String msg) {
-    	WakaTime.logMessage(msg, Status.ERROR, null);
+        WakaTime.logMessage(msg, Status.ERROR, null);
     }
-    
+
     public static void error(String msg, Exception e) {
-    	WakaTime.logMessage(msg, Status.ERROR, e);
+        WakaTime.logMessage(msg, Status.ERROR, e);
     }
-    
+
     public static void logMessage(String msg, int level, Exception e) {
-    	if (logInstance != null)
-    		logInstance.log(new Status(level, PLUGIN_ID, Status.OK, msg, e));
+        if (logInstance != null)
+            logInstance.log(new Status(level, PLUGIN_ID, Status.OK, msg, e));
     }
 
     /**

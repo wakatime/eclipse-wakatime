@@ -87,7 +87,8 @@ public class Dependencies {
         };
         for (int i=0; i<paths.length; i++) {
             try {
-                Runtime.getRuntime().exec(paths[i]);
+                String[] cmds = { paths[i], "--version" };
+                Runtime.getRuntime().exec(cmds);
                 Dependencies.pythonLocation = paths[i];
                 break;
             } catch (Exception e) { }
@@ -103,7 +104,7 @@ public class Dependencies {
             }
 
             File cli = new File(WakaTime.getWakaTimeCLI());
-            String outFile = cli.getParentFile().getParentFile().getAbsolutePath()+File.separator+"python.msi";
+            String outFile = combinePaths(cli.getParentFile().getParentFile().getAbsolutePath(), "python.msi");
             if (downloadFile(url, outFile)) {
 
                 // execute python msi installer
@@ -131,7 +132,7 @@ public class Dependencies {
         File cli = new File(WakaTime.getWakaTimeCLI());
 
         String url = "https://codeload.github.com/wakatime/wakatime/zip/master";
-        String zipFile = cli.getParentFile().getParentFile().getParentFile().getAbsolutePath()+File.separator+"wakatime.zip";
+        String zipFile = combinePaths(cli.getParentFile().getParentFile().getParentFile().getAbsolutePath(), "wakatime.zip");
         File outputDir = cli.getParentFile().getParentFile().getParentFile();
 
         // Delete old wakatime-master directory if it exists
@@ -239,5 +240,18 @@ public class Dependencies {
             }
         }
         path.delete();
+    }
+
+    public static String combinePaths(String... args) {
+        File path = null;
+        for (String arg : args) {
+            if (path == null)
+                path = new File(arg);
+            else
+                path = new File(path, arg);
+        }
+        if (path == null)
+            return null;
+        return path.toString();
     }
 }
