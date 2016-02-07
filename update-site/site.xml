@@ -4,8 +4,12 @@
    <description name="WakaTime" url="https://raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/">
       Fully automatic time tracking for Eclipse.
    </description>
-   <feature url="features/com.wakatime.eclipse.feature_2.0.5.jar" id="com.wakatime.eclipse.feature" version="2.0.5">
+   <feature url="features/com.wakatime.eclipse.feature_2.0.6.jar" id="com.wakatime.eclipse.feature" version="2.0.6">
       <category name="com.wakatime.eclipse.category"/>
    </feature>
-   <category-def name="com.wakatime.eclipse.category" label="WakaTime"/>
+   <category-def name="com.wakatime.eclipse.category" label="WakaTime">
+      <description>
+         Metrics, insights, and time tracking automatically generated from your programming activity.
+      </description>
+   </category-def>
 </site>
