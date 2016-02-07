@@ -15,7 +15,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -95,30 +94,29 @@ public class Dependencies {
         }
         return Dependencies.pythonLocation;
     }
-
+    
     public void installPython() {
         if (System.getProperty("os.name").contains("Windows")) {
-            String url = "https://www.python.org/ftp/python/3.4.2/python-3.4.2.msi";
-            if (System.getenv("ProgramFiles(x86)") != null) {
-                url = "https://www.python.org/ftp/python/3.4.2/python-3.4.2.amd64.msi";
-            }
+            String pyVer = "3.5.0";
+            String arch = "win32";
+            if (is64bit()) arch = "amd64";
+            String url = "https://www.python.org/ftp/python/" + pyVer + "/python-" + pyVer + "-embed-" + arch + ".zip";
 
-            File cli = new File(WakaTime.getWakaTimeCLI());
-            String outFile = combinePaths(cli.getParentFile().getParentFile().getAbsolutePath(), "python.msi");
+        	File cli = new File(WakaTime.getWakaTimeCLI());
+        	File dir = cli.getParentFile().getParentFile();
+            String outFile = combinePaths(dir.getAbsolutePath(), "python.zip");
             if (downloadFile(url, outFile)) {
 
-                // execute python msi installer
-                ArrayList<String> cmds = new ArrayList<String>();
-                cmds.add("msiexec");
-                cmds.add("/i");
-                cmds.add(outFile);
-                cmds.add("/norestart");
-                cmds.add("/qb!");
+                File targetDir = new File(combinePaths(dir.getAbsolutePath(), "python"));
+
+                // extract python
                 try {
-                    Runtime.getRuntime().exec(cmds.toArray(new String[cmds.size()]));
-                } catch (Exception e) {
-                    WakaTime.error("Error", e);
+                    unzip(outFile, targetDir);
+                } catch (IOException e) {
+                    WakaTime.error(e.toString());
                 }
+                File zipFile = new File(outFile);
+                zipFile.delete();
             }
         }
     }
@@ -253,5 +251,15 @@ public class Dependencies {
         if (path == null)
             return null;
         return path.toString();
+    }
+    
+    public static boolean is64bit() {
+        boolean is64bit = false;
+        if (System.getProperty("os.name").contains("Windows")) {
+            is64bit = (System.getenv("ProgramFiles(x86)") != null);
+        } else {
+            is64bit = (System.getProperty("os.arch").indexOf("64") != -1);
+        }
+        return is64bit;
     }
 }
