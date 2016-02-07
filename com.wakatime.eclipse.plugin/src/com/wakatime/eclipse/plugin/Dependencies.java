@@ -15,6 +15,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -34,63 +35,62 @@ public class Dependencies {
     public boolean isPythonInstalled() {
         return Dependencies.getPythonLocation() != null;
     }
-
+    
+    public static String getResourcesLocation() {
+    	File cli = new File(WakaTime.getWakaTimeCLI());
+    	File dir = cli.getParentFile().getParentFile();
+    	return dir.getAbsolutePath();
+    }
+    
     public static String getPythonLocation() {
         if (Dependencies.pythonLocation != null)
             return Dependencies.pythonLocation;
-        String []paths = new String[] {
-                "pythonw",
-                "python",
-                "/usr/local/bin/python",
-                "/usr/bin/python",
-                "\\python37\\pythonw",
-                "\\Python37\\pythonw",
-                "\\python36\\pythonw",
-                "\\Python36\\pythonw",
-                "\\python35\\pythonw",
-                "\\Python35\\pythonw",
-                "\\python34\\pythonw",
-                "\\Python34\\pythonw",
-                "\\python33\\pythonw",
-                "\\Python33\\pythonw",
-                "\\python32\\pythonw",
-                "\\Python32\\pythonw",
-                "\\python31\\pythonw",
-                "\\Python31\\pythonw",
-                "\\python30\\pythonw",
-                "\\Python30\\pythonw",
-                "\\python27\\pythonw",
-                "\\Python27\\pythonw",
-                "\\python26\\pythonw",
-                "\\Python26\\pythonw",
-                "\\python37\\python",
-                "\\Python37\\python",
-                "\\python36\\python",
-                "\\Python36\\python",
-                "\\python35\\python",
-                "\\Python35\\python",
-                "\\python34\\python",
-                "\\Python34\\python",
-                "\\python33\\python",
-                "\\Python33\\python",
-                "\\python32\\python",
-                "\\Python32\\python",
-                "\\python31\\python",
-                "\\Python31\\python",
-                "\\python30\\python",
-                "\\Python30\\python",
-                "\\python27\\python",
-                "\\Python27\\python",
-                "\\python26\\python",
-                "\\Python26\\python",
-        };
-        for (int i=0; i<paths.length; i++) {
+        ArrayList<String> paths = new ArrayList<String>();
+        paths.add(null);
+        paths.add("/");
+        paths.add("/usr/local/bin/");
+        paths.add("/usr/bin/");
+        if (System.getProperty("os.name").contains("Windows")) {
+            File resourcesLocation = new File(Dependencies.getResourcesLocation());
+            paths.add(combinePaths(resourcesLocation.getAbsolutePath(), "python"));
+            paths.add("/python39");
+            paths.add("/Python39");
+            paths.add("/python38");
+            paths.add("/Python38");
+            paths.add("/python37");
+            paths.add("/Python37");
+            paths.add("/python36");
+            paths.add("/Python36");
+            paths.add("/python35");
+            paths.add("/Python35");
+            paths.add("/python34");
+            paths.add("/Python34");
+            paths.add("/python33");
+            paths.add("/Python33");
+            paths.add("/python27");
+            paths.add("/Python27");
+            paths.add("/python26");
+            paths.add("/Python26");
+        }
+        for (String path : paths) {
             try {
-                String[] cmds = { paths[i], "--version" };
+                String[] cmds = {combinePaths(path, "pythonw"), "--version"};
                 Runtime.getRuntime().exec(cmds);
-                Dependencies.pythonLocation = paths[i];
+                Dependencies.pythonLocation = combinePaths(path, "pythonw");
                 break;
-            } catch (Exception e) { }
+            } catch (Exception e) {
+                try {
+                    String[] cmds = {combinePaths(path, "python"), "--version"};
+                    Runtime.getRuntime().exec(cmds);
+                    Dependencies.pythonLocation = combinePaths(path, "python");
+                    break;
+                } catch (Exception e2) { }
+            }
+        }
+        if (Dependencies.pythonLocation != null) {
+            WakaTime.log("Found python binary: " + Dependencies.pythonLocation);
+        } else {
+            WakaTime.log("Could not find python binary.");
         }
         return Dependencies.pythonLocation;
     }
@@ -113,7 +113,7 @@ public class Dependencies {
                 try {
                     unzip(outFile, targetDir);
                 } catch (IOException e) {
-                    WakaTime.error(e.toString());
+                	WakaTime.error("Error", e);
                 }
                 File zipFile = new File(outFile);
                 zipFile.delete();
