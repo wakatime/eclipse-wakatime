@@ -38,7 +38,7 @@ public class CustomEditorListener implements IPartListener2 {
                 String currentFile = uri.getPath();
                 long currentTime = System.currentTimeMillis() / 1000;
                 if (!currentFile.equals(WakaTime.getDefault().lastFile) || WakaTime.getDefault().lastTime + WakaTime.FREQUENCY * 60 < currentTime) {
-                    WakaTime.logFile(currentFile, WakaTime.getActiveProject(), false);
+                    WakaTime.sendHeartbeat(currentFile, WakaTime.getActiveProject(), false);
                     WakaTime.getDefault().lastFile = currentFile;
                     WakaTime.getDefault().lastTime = currentTime;
                 }

@@ -19,9 +19,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.Authenticator;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.net.PasswordAuthentication;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.security.KeyManagementException;
@@ -46,18 +48,21 @@ public class Dependencies {
     }
 
     public static String getResourcesLocation() {
-    	Bundle bundle = Platform.getBundle("com.wakatime.eclipse.plugin");
-        URL url = bundle.getEntry("/");
-        URL rootURL = null;
-        try {
-            rootURL = FileLocator.toFileURL(url);
-        } catch (Exception e) {
-            WakaTime.error("Error", e);
-        }
-        if (rootURL == null)
-            return null;
-        File script = new File(rootURL.getPath());
-        return script.getAbsolutePath();
+    	if (Dependencies.resourcesLocation == null) {
+	    	Bundle bundle = Platform.getBundle("com.wakatime.eclipse.plugin");
+	        URL url = bundle.getEntry("/");
+	        URL rootURL = null;
+	        try {
+	            rootURL = FileLocator.toFileURL(url);
+	        } catch (Exception e) {
+	            WakaTime.log.error(e);
+	        }
+	        if (rootURL == null)
+	            return null;
+	        File script = new File(rootURL.getPath());
+	        Dependencies.resourcesLocation = script.getAbsolutePath();
+    	}
+    	return Dependencies.resourcesLocation;
     }
 
     public static String getPythonLocation() {
@@ -92,17 +97,17 @@ public class Dependencies {
             }
         }
         if (Dependencies.pythonLocation != null) {
-            WakaTime.debug("Found python binary: " + Dependencies.pythonLocation);
+            WakaTime.log.debug("Found python binary: " + Dependencies.pythonLocation);
         } else {
-            WakaTime.error("Could not find python binary.");
+            WakaTime.log.error("Could not find python binary.");
         }
         return Dependencies.pythonLocation;
     }
 
     public static boolean isCLIInstalled() {
         File cli = new File(Dependencies.getCLILocation());
-        WakaTime.debug("WakaTime Core Location: " + cli.getAbsolutePath());
-        WakaTime.debug("WakaTime Core Exists: " + cli.exists());
+        WakaTime.log.debug("WakaTime Core Location: " + cli.getAbsolutePath());
+        WakaTime.log.debug("WakaTime Core Exists: " + cli.exists());
         return cli.exists();
     }
 
@@ -129,17 +134,17 @@ public class Dependencies {
             while ((s = stdError.readLine()) != null) {
                 output += s;
             }
-            WakaTime.debug("wakatime cli version check output: \"" + output + "\"");
-            WakaTime.debug("wakatime cli version check exit code: " + p.exitValue());
+            WakaTime.log.debug("wakatime cli version check output: \"" + output + "\"");
+            WakaTime.log.debug("wakatime cli version check exit code: " + p.exitValue());
 
             if (p.exitValue() == 0) {
                 String cliVersion = latestCliVersion();
-                WakaTime.debug("Current cli version from GitHub: " + cliVersion);
+                WakaTime.log.debug("Current cli version from GitHub: " + cliVersion);
                 if (output.contains(cliVersion))
                     return false;
             }
         } catch (Exception e) {
-        	WakaTime.error(e);
+        	WakaTime.log.error(e);
         }
         return true;
     }
@@ -154,7 +159,7 @@ public class Dependencies {
                 return m.group(1) + "." + m.group(2) + "." + m.group(3);
             }
         } catch (Exception e) {
-        	WakaTime.error(e);
+        	WakaTime.log.error(e);
         }
         return "Unknown";
     }
@@ -186,7 +191,7 @@ public class Dependencies {
                 File oldZipFile = new File(zipFile);
                 oldZipFile.delete();
             } catch (IOException e) {
-            	WakaTime.error(e);
+            	WakaTime.log.error(e);
             }
         }
     }
@@ -212,7 +217,7 @@ public class Dependencies {
                 try {
                     Dependencies.unzip(zipFile.getAbsolutePath(), targetDir);
                 } catch (IOException e) {
-                	WakaTime.error(e);
+                	WakaTime.log.error(e);
                 }
                 zipFile.delete();
             }
@@ -241,7 +246,7 @@ public class Dependencies {
             fos.close();
             return true;
         } catch (RuntimeException e) {
-        	WakaTime.error(e);
+            WakaTime.log.warn(e);
             try {
                 // try downloading without verifying SSL cert (https://github.com/wakatime/jetbrains-wakatime/issues/46)
                 SSLContext SSL_CONTEXT = SSLContext.getInstance("SSL");
@@ -259,14 +264,14 @@ public class Dependencies {
                 fos.close();
                 return true;
             } catch (NoSuchAlgorithmException e1) {
-            	WakaTime.error(e1);
+                WakaTime.log.warn(e1);
             } catch (KeyManagementException e1) {
-            	WakaTime.error(e1);
+                WakaTime.log.warn(e1);
             } catch (IOException e1) {
-            	WakaTime.error(e1);
+                WakaTime.log.warn(e1);
             }
         } catch (IOException e) {
-        	WakaTime.error(e);
+            WakaTime.log.warn(e);
         }
 
         return false;
@@ -288,7 +293,7 @@ public class Dependencies {
             }
             inputStream.close();
         } catch (RuntimeException e) {
-        	WakaTime.error(e);
+            WakaTime.log.warn(e);
             try {
                 // try downloading without verifying SSL cert (https://github.com/wakatime/jetbrains-wakatime/issues/46)
                 SSLContext SSL_CONTEXT = SSLContext.getInstance("SSL");
@@ -302,22 +307,53 @@ public class Dependencies {
                 }
                 inputStream.close();
             } catch (NoSuchAlgorithmException e1) {
-            	WakaTime.error(e1);
+                WakaTime.log.warn(e1);
             } catch (KeyManagementException e1) {
-            	WakaTime.error(e1);
+                WakaTime.log.warn(e1);
             } catch (UnknownHostException e1) {
-            	WakaTime.error(e1);
+                WakaTime.log.warn(e1);
             } catch (IOException e1) {
-            	WakaTime.error(e1);
+                WakaTime.log.warn(e1);
             }
         } catch (UnknownHostException e) {
-        	WakaTime.error(e);
+            WakaTime.log.warn(e);
         } catch (Exception e) {
-        	WakaTime.error(e);
+            WakaTime.log.warn(e);
         }
 
         return text.toString();
     }
+
+    
+    /**
+     * Configures a proxy if one is set in ~/.wakatime.cfg.
+     */
+    public static void configureProxy() {
+        String proxyConfig = ConfigFile.get("settings", "proxy");
+        if (!proxyConfig.trim().equals("")) {
+            try {
+                URL proxyUrl = new URL(proxyConfig);
+                String userInfo = proxyUrl.getUserInfo();
+                if (userInfo != null) {
+                    final String user = userInfo.split(":")[0];
+                    final String pass = userInfo.split(":")[1];
+                    Authenticator authenticator = new Authenticator() {
+                        public PasswordAuthentication getPasswordAuthentication() {
+                            return (new PasswordAuthentication(user, pass.toCharArray()));
+                        }
+                    };
+                    Authenticator.setDefault(authenticator);
+                }
+
+                System.setProperty("https.proxyHost", proxyUrl.getHost());
+                System.setProperty("https.proxyPort", Integer.toString(proxyUrl.getPort()));
+
+            } catch (MalformedURLException e) {
+                WakaTime.log.error("Proxy string must follow https://user:pass@host:port format: " + proxyConfig);
+            }
+        }
+    }
+
 
     private static void unzip(String zipFile, File outputDir) throws IOException {
         if(!outputDir.exists())

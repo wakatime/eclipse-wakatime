@@ -60,7 +60,7 @@ public class CustomExecutionListener implements IExecutionListener {
                     long currentTime = System.currentTimeMillis() / 1000;
 
                     // always log writes
-                    WakaTime.logFile(currentFile, WakaTime.getActiveProject(), true);
+                    WakaTime.sendHeartbeat(currentFile, WakaTime.getActiveProject(), true);
                     WakaTime.getDefault().lastFile = currentFile;
                     WakaTime.getDefault().lastTime = currentTime;
                 }

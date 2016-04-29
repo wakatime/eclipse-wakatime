@@ -20,9 +20,11 @@ import org.eclipse.core.commands.IExecutionListener;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.ILog;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.custom.StyledText;
@@ -50,9 +52,10 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public static final String PLUGIN_ID = "com.wakatime.eclipse.plugin";
 
     // The shared instance
-    private static WakaTime plugin;
-    private static ILog logInstance;
-    private static boolean DEBUG = false;
+    public static WakaTime plugin;
+    public static ILog logInstance;
+    public static boolean DEBUG = false;
+    public static final Logger log = new Logger();
 
     // Listeners
     private static CustomEditorListener editorListener;
@@ -80,7 +83,6 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
      */
     public void start(BundleContext context) throws Exception {
         logInstance = getLog();
-        WakaTime.log("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
 
         super.start(context);
         plugin = this;
@@ -102,15 +104,21 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                 IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
                 if (window == null) return;
 
-                // setup config file parsing
-                MenuHandler handler = new MenuHandler();
-                DEBUG = handler.getDebug();
+                // setup wakatime menu
+                //MenuHandler handler = new MenuHandler();
+                String debug = ConfigFile.get("settings", "debug");
+                DEBUG = debug != null && debug.trim().equals("true");
+                
+                
+                WakaTime.log.debug("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
 
                 // prompt for apiKey if not set
-                String apiKey = handler.getApiKey();
+                String apiKey = ConfigFile.get("settings", "api_key");
                 if (apiKey == "") {
-                    handler.promptForApiKey(window);
+                    promptForApiKey(window);
                 }
+
+                Dependencies.configureProxy();
 
                 if (!Dependencies.isPythonInstalled()) {
                 	Dependencies.installPython();
@@ -122,9 +130,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                         dialog.open();
                     }
                 }
-                if (!Dependencies.isCLIInstalled()) {
-                	Dependencies.installCLI();
-                }
+                checkCore();
 
                 if (window.getPartService() == null) return;
 
@@ -156,14 +162,14 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                         String currentFile = uri.getPath();
                         long currentTime = System.currentTimeMillis() / 1000;
                         if (!currentFile.equals(WakaTime.getDefault().lastFile) || WakaTime.getDefault().lastTime + WakaTime.FREQUENCY * 60 < currentTime) {
-                            WakaTime.logFile(currentFile, WakaTime.getActiveProject(), false);
+                            WakaTime.sendHeartbeat(currentFile, WakaTime.getActiveProject(), false);
                             WakaTime.getDefault().lastFile = currentFile;
                             WakaTime.getDefault().lastTime = currentTime;
                         }
                     }
                 }
 
-                WakaTime.log("Finished initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
+                WakaTime.log.debug("Finished initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
             }
         });
     }
@@ -180,11 +186,26 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         if (window != null && window.getPartService() != null)
             window.getPartService().removePartListener(editorListener);
     }
-
-    public static void logFile(String file, String project, boolean isWrite) {
+    
+    private void checkCore() {
+        if (!Dependencies.isCLIInstalled()) {
+            log.info("Downloading and installing wakatime-cli ...");
+            Dependencies.installCLI();
+            log.info("Finished downloading and installing wakatime-cli.");
+        } else if (Dependencies.isCLIOld()) {
+            log.info("Upgrading wakatime-cli ...");
+            Dependencies.upgradeCLI();
+            log.info("Finished upgrading wakatime-cli.");
+        } else {
+            log.info("wakatime-cli is up to date.");
+        }
+        log.debug("CLI location: " + Dependencies.getCLILocation());
+    }
+    
+    public static void sendHeartbeat(String file, String project, boolean isWrite) {
         final String[] cmds = buildCliCommands(file, project, isWrite);
 
-        WakaTime.debug(cmds.toString());
+        WakaTime.log.debug(cmds.toString());
 
         Runnable r = new Runnable() {
             public void run() {
@@ -195,16 +216,16 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 	                     BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
 	                     proc.waitFor();
 	                     String s;
-	                     while ((s = stdInput.readLine()) != null) {
-	                         WakaTime.debug(s);
-	                     }
-	                     while ((s = stdError.readLine()) != null) {
-	                         WakaTime.debug(s);
-	                     }
-	                     WakaTime.debug("Command finished with return value: "+proc.exitValue());
+                         while ((s = stdInput.readLine()) != null) {
+                             WakaTime.log.debug(s);
+                         }
+                         while ((s = stdError.readLine()) != null) {
+                        	 WakaTime.log.debug(s);
+                         }
+	                     WakaTime.log.debug("Command finished with return value: "+proc.exitValue());
                      }
                  } catch (Exception e) {
-                     WakaTime.error(e);
+                     WakaTime.log.error(e);
                  }
              }
          };
@@ -226,7 +247,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         if (isWrite)
             cmds.add("--write");
         if (DEBUG) {
-            WakaTime.log(cmds.toString());
+            WakaTime.log.info(cmds.toString());
             cmds.add("--verbose");
         }
         return cmds.toArray(new String[cmds.size()]);
@@ -260,41 +281,15 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public static String fixFilePath(String file) {
         return file.replaceFirst("^[\\\\/]([A-Z]:[\\\\/])", "$1");
     }
-
-    public static void log(String msg) {
-        WakaTime.logMessage(msg, Status.INFO, null);
-    }
     
-    public static void debug(String msg) {
-    	if (DEBUG)
-    		WakaTime.logMessage(msg, Status.INFO, null);
-    }
-
-    public static void debug(String msg, Exception e) {
-    	if (DEBUG)
-    		WakaTime.logMessage(msg, Status.ERROR, e);
-    }
-
-    public static void debug(Exception e) {
-    	if (DEBUG)
-    		WakaTime.logMessage("Debug", Status.ERROR, e);
-    }
-
-    public static void error(String msg) {
-        WakaTime.logMessage(msg, Status.ERROR, null);
-    }
-
-    public static void error(String msg, Exception e) {
-        WakaTime.logMessage(msg, Status.ERROR, e);
-    }
-
-    public static void error(Exception e) {
-        WakaTime.logMessage("Error", Status.ERROR, e);
-    }
-
-    public static void logMessage(String msg, int level, Exception e) {
-        if (logInstance != null)
-            logInstance.log(new Status(level, PLUGIN_ID, Status.OK, msg, e));
+    public static void promptForApiKey(IWorkbenchWindow window) {
+        String apiKey = ConfigFile.get("settings", "api_key");
+        InputDialog dialog = new InputDialog(window.getShell(),
+            "WakaTime API Key", "Please enter your api key from http://wakatime.com/settings#apikey", apiKey, null);
+        if (dialog.open() == IStatus.OK) {
+          apiKey = dialog.getValue();
+          ConfigFile.set("settings", "api_key", apiKey);
+        }
     }
 
     /**
