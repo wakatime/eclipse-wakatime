@@ -112,11 +112,9 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                     handler.promptForApiKey(window);
                 }
 
-                Dependencies deps = new Dependencies();
-
-                if (!deps.isPythonInstalled()) {
-                    deps.installPython();
-                    if (!deps.isPythonInstalled()) {
+                if (!Dependencies.isPythonInstalled()) {
+                	Dependencies.installPython();
+                    if (!Dependencies.isPythonInstalled()) {
                         MessageDialog dialog = new MessageDialog(window.getShell(),
                             "Warning!", null,
                             "WakaTime needs Python installed. Please install Python from python.org/downloads, then restart Eclipse.",
@@ -124,8 +122,8 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                         dialog.open();
                     }
                 }
-                if (!deps.isCLIInstalled()) {
-                    deps.installCLI();
+                if (!Dependencies.isCLIInstalled()) {
+                	Dependencies.installCLI();
                 }
 
                 if (window.getPartService() == null) return;
@@ -186,8 +184,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public static void logFile(String file, String project, boolean isWrite) {
         final String[] cmds = buildCliCommands(file, project, isWrite);
 
-        if (DEBUG)
-            WakaTime.log(cmds.toString());
+        WakaTime.debug(cmds.toString());
 
         Runnable r = new Runnable() {
             public void run() {
@@ -199,15 +196,15 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 	                     proc.waitFor();
 	                     String s;
 	                     while ((s = stdInput.readLine()) != null) {
-	                         WakaTime.log(s);
+	                         WakaTime.debug(s);
 	                     }
 	                     while ((s = stdError.readLine()) != null) {
-	                         WakaTime.log(s);
+	                         WakaTime.debug(s);
 	                     }
-	                     WakaTime.log("Command finished with return value: "+proc.exitValue());
+	                     WakaTime.debug("Command finished with return value: "+proc.exitValue());
                      }
                  } catch (Exception e) {
-                     WakaTime.error("Error", e);
+                     WakaTime.error(e);
                  }
              }
          };
@@ -217,7 +214,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public static String[] buildCliCommands(String file, String project,  boolean isWrite) {
         ArrayList<String> cmds = new ArrayList<String>();
         cmds.add(Dependencies.getPythonLocation());
-        cmds.add(WakaTime.getWakaTimeCLI());
+        cmds.add(Dependencies.getCLILocation());
         cmds.add("--file");
         cmds.add(WakaTime.fixFilePath(file));
         cmds.add("--plugin");
@@ -264,23 +261,23 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         return file.replaceFirst("^[\\\\/]([A-Z]:[\\\\/])", "$1");
     }
 
-    public static String getWakaTimeCLI() {
-        Bundle bundle = Platform.getBundle("com.wakatime.eclipse.plugin");
-        URL url = bundle.getEntry("/");
-        URL rootURL = null;
-        try {
-            rootURL = FileLocator.toFileURL(url);
-        } catch (Exception e) {
-            WakaTime.error("Error", e);
-        }
-        if (rootURL == null)
-            return null;
-        File script = new File(Dependencies.combinePaths(rootURL.getPath(), "dependencies", "wakatime-master", "wakatime", "cli.py"));
-        return script.getAbsolutePath();
-    }
-
     public static void log(String msg) {
         WakaTime.logMessage(msg, Status.INFO, null);
+    }
+    
+    public static void debug(String msg) {
+    	if (DEBUG)
+    		WakaTime.logMessage(msg, Status.INFO, null);
+    }
+
+    public static void debug(String msg, Exception e) {
+    	if (DEBUG)
+    		WakaTime.logMessage(msg, Status.ERROR, e);
+    }
+
+    public static void debug(Exception e) {
+    	if (DEBUG)
+    		WakaTime.logMessage("Debug", Status.ERROR, e);
     }
 
     public static void error(String msg) {
@@ -289,6 +286,10 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
     public static void error(String msg, Exception e) {
         WakaTime.logMessage(msg, Status.ERROR, e);
+    }
+
+    public static void error(Exception e) {
+        WakaTime.logMessage("Error", Status.ERROR, e);
     }
 
     public static void logMessage(String msg, int level, Exception e) {
