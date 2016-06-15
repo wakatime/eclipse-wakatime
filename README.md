@@ -7,8 +7,8 @@ Metrics, insights, and time tracking automatically generated from your programmi
 Installation
 ------------
 
-1. Add WakaTime to your Eclipse as a new `Update Site`.<br />Click `Help` -> `Install New Software...` -> then enter this url:<br />`https://raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/`<br />
-[more info...](http://marketplace.eclipse.org/updatesite/help?url=https%3A//raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/)
+1. Add WakaTime to your Eclipse as a new `Update Site`.<br />Click `Help` -> `Install New Software...` -> then enter this url:<br />
+`https://raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/`
 
 2. Make sure `WakaTime` is checked, then click `Next` to install the plugin.
 
