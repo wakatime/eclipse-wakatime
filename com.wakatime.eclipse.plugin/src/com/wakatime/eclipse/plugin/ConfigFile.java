@@ -26,7 +26,7 @@ public class ConfigFile {
                     } else {
                         if (section.toLowerCase().equals(currentSection)) {
                             String[] parts = line.split("=");
-                            if (parts.length == 2 && parts[0].trim().equals(key)) {
+                            if (parts.length() == 2 && parts[0].trim().equals(key)) {
                                 val = parts[1].trim();
                                 br.close();
                                 return val;
