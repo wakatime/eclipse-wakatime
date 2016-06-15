@@ -48,21 +48,18 @@ public class Dependencies {
     }
 
     public static String getResourcesLocation() {
-    	if (Dependencies.resourcesLocation == null) {
-	    	Bundle bundle = Platform.getBundle("com.wakatime.eclipse.plugin");
-	        URL url = bundle.getEntry("/");
-	        URL rootURL = null;
-	        try {
-	            rootURL = FileLocator.toFileURL(url);
-	        } catch (Exception e) {
-	            WakaTime.log.error(e);
-	        }
-	        if (rootURL == null)
-	            return null;
-	        File script = new File(rootURL.getPath());
-	        Dependencies.resourcesLocation = script.getAbsolutePath();
-    	}
-    	return Dependencies.resourcesLocation;
+        if (Dependencies.resourcesLocation == null) {
+            if (isWindows()) {
+                File appDataFolder = new File(System.getenv("APPDATA"));
+                File resourcesFolder = new File(appDataFolder, "WakaTime");
+                Dependencies.resourcesLocation = resourcesFolder.getAbsolutePath();
+            } else {
+                File userHomeDir = new File(System.getProperty("user.home"));
+                File resourcesFolder = new File(userHomeDir, ".wakatime");
+                Dependencies.resourcesLocation = resourcesFolder.getAbsolutePath();
+            }
+        }
+        return Dependencies.resourcesLocation;
     }
 
     public static String getPythonLocation() {
@@ -73,7 +70,7 @@ public class Dependencies {
         paths.add("/");
         paths.add("/usr/local/bin/");
         paths.add("/usr/bin/");
-        if (System.getProperty("os.name").contains("Windows")) {
+        if (isWindows()) {
             File resourcesLocation = new File(Dependencies.getResourcesLocation());
             paths.add(combinePaths(resourcesLocation.getAbsolutePath(), "python"));
             for (int i=26; i<=50; i++) {
@@ -82,18 +79,12 @@ public class Dependencies {
             }
         }
         for (String path : paths) {
-            try {
-                String[] cmds = {combinePaths(path, "pythonw"), "--version"};
-                Runtime.getRuntime().exec(cmds);
+            if (runPython(combinePaths(path, "pythonw"))) {
                 Dependencies.pythonLocation = combinePaths(path, "pythonw");
                 break;
-            } catch (Exception e) {
-                try {
-                    String[] cmds = {combinePaths(path, "python"), "--version"};
-                    Runtime.getRuntime().exec(cmds);
-                    Dependencies.pythonLocation = combinePaths(path, "python");
-                    break;
-                } catch (Exception e2) { }
+            } else if (runPython(combinePaths(path, "python"))) {
+                Dependencies.pythonLocation = combinePaths(path, "python");
+                break;
             }
         }
         if (Dependencies.pythonLocation != null) {
@@ -106,8 +97,6 @@ public class Dependencies {
 
     public static boolean isCLIInstalled() {
         File cli = new File(Dependencies.getCLILocation());
-        WakaTime.log.debug("WakaTime Core Location: " + cli.getAbsolutePath());
-        WakaTime.log.debug("WakaTime Core Exists: " + cli.exists());
         return cli.exists();
     }
 
@@ -201,8 +190,8 @@ public class Dependencies {
     }
 
     public static void installPython() {
-        if (System.getProperty("os.name").contains("Windows")) {
-            String pyVer = "3.5.0";
+        if (isWindows()) {
+            String pyVer = "3.5.1";
             String arch = "win32";
             if (is64bit()) arch = "amd64";
             String url = "https://www.python.org/ftp/python/" + pyVer + "/python-" + pyVer + "-embed-" + arch + ".zip";
@@ -217,7 +206,7 @@ public class Dependencies {
                 try {
                     Dependencies.unzip(zipFile.getAbsolutePath(), targetDir);
                 } catch (IOException e) {
-                	WakaTime.log.error(e);
+                    WakaTime.log.warn(e);
                 }
                 zipFile.delete();
             }
@@ -354,6 +343,35 @@ public class Dependencies {
         }
     }
 
+    private static boolean runPython(String path) {
+        try {
+            WakaTime.log.debug(path + " --version");
+            Process p = Runtime.getRuntime().exec(path + " --version");
+            BufferedReader stdInput = new BufferedReader(new
+                    InputStreamReader(p.getInputStream()));
+            BufferedReader stdError = new BufferedReader(new
+                    InputStreamReader(p.getErrorStream()));
+            p.waitFor();
+            String output = "";
+            String s;
+            while ((s = stdInput.readLine()) != null) {
+                output += s;
+            }
+            while ((s = stdError.readLine()) != null) {
+                output += s;
+            }
+            if (output != "")
+                WakaTime.log.debug(output);
+            if (p.exitValue() != 0)
+                throw new Exception("NonZero Exit Code: " + p.exitValue());
+
+            return true;
+
+        } catch (Exception e) {
+            WakaTime.log.debug(e.toString());
+            return false;
+        }
+    }
 
     private static void unzip(String zipFile, File outputDir) throws IOException {
         if(!outputDir.exists())
@@ -402,12 +420,16 @@ public class Dependencies {
 
     public static boolean is64bit() {
         boolean is64bit = false;
-        if (System.getProperty("os.name").contains("Windows")) {
+        if (isWindows()) {
             is64bit = (System.getenv("ProgramFiles(x86)") != null);
         } else {
             is64bit = (System.getProperty("os.arch").indexOf("64") != -1);
         }
         return is64bit;
+    }
+
+    public static boolean isWindows() {
+        return System.getProperty("os.name").contains("Windows");
     }
 
     public static String combinePaths(String... args) {
