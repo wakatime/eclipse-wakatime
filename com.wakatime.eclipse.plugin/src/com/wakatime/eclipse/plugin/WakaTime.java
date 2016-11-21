@@ -108,8 +108,8 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                 //MenuHandler handler = new MenuHandler();
                 String debug = ConfigFile.get("settings", "debug");
                 DEBUG = debug != null && debug.trim().equals("true");
-                
-                
+
+
                 WakaTime.log.debug("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
 
                 // prompt for apiKey if not set
@@ -186,7 +186,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         if (window != null && window.getPartService() != null)
             window.getPartService().removePartListener(editorListener);
     }
-    
+
     private void checkCore() {
         if (!Dependencies.isCLIInstalled()) {
             log.info("Downloading and installing wakatime-cli ...");
@@ -201,8 +201,13 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         }
         log.debug("CLI location: " + Dependencies.getCLILocation());
     }
-    
+
     public static void sendHeartbeat(String file, String project, boolean isWrite) {
+        if (!Dependencies.isPythonInstalled()) {
+            WakaTime.log.error("Please install Python from python.org/downloads then restart your IDE.");
+            return;
+        }
+
         final String[] cmds = buildCliCommands(file, project, isWrite);
 
         WakaTime.log.debug(cmds.toString());
@@ -281,7 +286,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public static String fixFilePath(String file) {
         return file.replaceFirst("^[\\\\/]([A-Z]:[\\\\/])", "$1");
     }
-    
+
     public static void promptForApiKey(IWorkbenchWindow window) {
         String apiKey = ConfigFile.get("settings", "api_key");
         InputDialog dialog = new InputDialog(window.getShell(),
