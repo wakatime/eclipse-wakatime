@@ -7,20 +7,20 @@ public class Logger {
     public static void info(String msg) {
         logMessage(msg, Status.INFO, null);
     }
-    
+
     public static void debug(String msg) {
-    	if (WakaTime.DEBUG)
-    		logMessage(msg, Status.INFO, null);
+        if (WakaTime.DEBUG)
+            logMessage(msg, Status.INFO, null);
     }
 
     public static void debug(String msg, Exception e) {
-    	if (WakaTime.DEBUG)
-    		logMessage(msg, Status.ERROR, e);
+        if (WakaTime.DEBUG)
+            logMessage(msg, Status.ERROR, e);
     }
 
     public static void debug(Exception e) {
-    	if (WakaTime.DEBUG)
-    		logMessage("Debug", Status.ERROR, e);
+        if (WakaTime.DEBUG)
+            logMessage("Debug", Status.ERROR, e);
     }
 
     public static void error(String msg) {
@@ -45,6 +45,6 @@ public class Logger {
 
     public static void logMessage(String msg, int level, Exception e) {
         if (WakaTime.logInstance != null)
-        	WakaTime.logInstance.log(new Status(level, WakaTime.PLUGIN_ID, Status.OK, msg, e));
+            WakaTime.logInstance.log(new Status(level, WakaTime.PLUGIN_ID, Status.OK, msg, e));
     }
 }

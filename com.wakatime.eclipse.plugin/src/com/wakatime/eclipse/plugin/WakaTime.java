@@ -121,7 +121,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                 Dependencies.configureProxy();
 
                 if (!Dependencies.isPythonInstalled()) {
-                	Dependencies.installPython();
+                    Dependencies.installPython();
                     if (!Dependencies.isPythonInstalled()) {
                         MessageDialog dialog = new MessageDialog(window.getShell(),
                             "Warning!", null,
@@ -217,17 +217,17 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                 try {
                      Process proc = Runtime.getRuntime().exec(cmds);
                      if (DEBUG) {
-	                     BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-	                     BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
-	                     proc.waitFor();
-	                     String s;
+                         BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+                         BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+                         proc.waitFor();
+                         String s;
                          while ((s = stdInput.readLine()) != null) {
                              WakaTime.log.debug(s);
                          }
                          while ((s = stdError.readLine()) != null) {
-                        	 WakaTime.log.debug(s);
+                             WakaTime.log.debug(s);
                          }
-	                     WakaTime.log.debug("Command finished with return value: "+proc.exitValue());
+                         WakaTime.log.debug("Command finished with return value: "+proc.exitValue());
                      }
                  } catch (Exception e) {
                      WakaTime.log.error(e);

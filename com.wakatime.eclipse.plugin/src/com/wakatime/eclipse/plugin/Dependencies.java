@@ -133,7 +133,7 @@ public class Dependencies {
                     return false;
             }
         } catch (Exception e) {
-        	WakaTime.log.error(e);
+            WakaTime.log.error(e);
         }
         return true;
     }
@@ -148,7 +148,7 @@ public class Dependencies {
                 return m.group(1) + "." + m.group(2) + "." + m.group(3);
             }
         } catch (Exception e) {
-        	WakaTime.log.error(e);
+            WakaTime.log.error(e);
         }
         return "Unknown";
     }
@@ -180,7 +180,7 @@ public class Dependencies {
                 File oldZipFile = new File(zipFile);
                 oldZipFile.delete();
             } catch (IOException e) {
-            	WakaTime.log.error(e);
+                WakaTime.log.error(e);
             }
         }
     }
