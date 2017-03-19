@@ -346,7 +346,8 @@ public class Dependencies {
     private static boolean runPython(String path) {
         try {
             WakaTime.log.debug(path + " --version");
-            Process p = Runtime.getRuntime().exec(path + " --version");
+            String[] cmds = {path, "--version"};
+            Process p = Runtime.getRuntime().exec(cmds);
             BufferedReader stdInput = new BufferedReader(new
                     InputStreamReader(p.getInputStream()));
             BufferedReader stdError = new BufferedReader(new
