@@ -12,7 +12,7 @@ Installation
 
 2. Make sure `WakaTime` is checked, then click `Next` to install the plugin.
 
-3. Enter your [api key](https://wakatime.com/settings#apikey), then click `OK`.
+3. Click `File -> WakaTime -> API Key`, enter your [api key](https://wakatime.com/settings#apikey), then click `OK`.
 
 4. Use Eclipse and your time will be tracked for you automatically.
 
