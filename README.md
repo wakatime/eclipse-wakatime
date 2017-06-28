@@ -5,11 +5,7 @@ Metrics, insights, and time tracking automatically generated from your programmi
 
 ## Installation
 
-1. Drag to your running Eclipse workspace:
-
-[![Drag to your running Eclipse* workspace. *Requires Eclipse Marketplace Client](https://marketplace.eclipse.org/sites/all/themes/solstice/public/images/marketplace/btn-install.png)](http://marketplace.eclipse.org/marketplace-client-intro?mpc_install=1675077 "Drag to your running Eclipse* workspace. *Requires Eclipse Marketplace Client")
-
-Or, search for `WakaTime` from `Help → Eclipse Marketplace…`
+1. Click `Help → Eclipse Marketplace…` then search for `WakaTime`.
 
 ![Eclipse marketplace menu](https://wakatime.com/static/img/guides/eclipse-marketplace.png)
 
