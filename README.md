@@ -1,14 +1,33 @@
-eclipse-wakatime
-================
+# eclipse-wakatime
 
 Metrics, insights, and time tracking automatically generated from your programming activity.
 
 
-Installation
-------------
+## Installation
 
-1. Add WakaTime to your Eclipse as a new `Update Site`.<br />Click `Help → Install New Software...`, then enter this url:<br />
-`https://raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/`
+1. Drag to your running Eclipse workspace:
+
+[![Drag to your running Eclipse* workspace. *Requires Eclipse Marketplace Client](https://marketplace.eclipse.org/sites/all/themes/solstice/public/images/marketplace/btn-install.png)](http://marketplace.eclipse.org/marketplace-client-intro?mpc_install=1675077 "Drag to your running Eclipse* workspace. *Requires Eclipse Marketplace Client")
+
+Or, search for `WakaTime` from `Help → Eclipse Marketplace…`
+
+![Eclipse marketplace menu](https://wakatime.com/static/img/guides/eclipse-marketplace.png)
+
+2. Click `File → WakaTime → API Key` and enter your [api key](https://wakatime.com/settings#apikey).
+
+3. Use Eclipse and your coding activity will be displayed on your [WakaTime dashboard](https://wakatime.com).
+
+
+## Screen Shots
+
+![Project Overview](https://wakatime.com/static/img/ScreenShots/Screen-Shot-2016-03-21.png)
+
+
+## Installation for Old Versions of Eclipse
+
+1. Click `Help → Install New Software...` then enter this url:
+
+    `https://raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/`
 
 2. Make sure `WakaTime` is checked, then click `Next` to install the plugin.
 
@@ -19,13 +38,6 @@ Installation
 Note: WakaTime on OS X depends on Xcode being installed to work correctly.
 
 
-Screen Shots
-------------
-
-![Project Overview](https://wakatime.com/static/img/ScreenShots/Screen-Shot-2016-03-21.png)
-
-
-Troubleshooting
----------------
+## Troubleshooting
 
 For troubleshooting information, see [wakatime/wakatime#troubleshooting](https://github.com/wakatime/wakatime#troubleshooting).
