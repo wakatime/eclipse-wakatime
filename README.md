@@ -9,9 +9,11 @@ Metrics, insights, and time tracking automatically generated from your programmi
 
 ![Eclipse marketplace menu](https://wakatime.com/static/img/guides/eclipse-marketplace.png)
 
-2. Click `File → WakaTime → API Key` and enter your [api key](https://wakatime.com/settings#apikey).
+2. Click `Install`.
 
-3. Use Eclipse and your coding activity will be displayed on your [WakaTime dashboard](https://wakatime.com).
+3. Navigate to `File → WakaTime → API Key` and enter your [api key](https://wakatime.com/settings#apikey).
+
+4. Use Eclipse and your coding activity will be displayed on your [WakaTime dashboard](https://wakatime.com).
 
 
 ## Screen Shots
