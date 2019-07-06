@@ -7,7 +7,7 @@ Metrics, insights, and time tracking automatically generated from your programmi
 
 1. Click `Help → Eclipse Marketplace…` then search for `WakaTime`.
 
-![Eclipse marketplace menu](https://wakatime.com/static/img/guides/eclipse-marketplace.png)
+![Eclipse marketplace menu](https://wakatime.com/static/img/plugins/installing/eclipse.png)
 
 2. Click `Install`.
 
