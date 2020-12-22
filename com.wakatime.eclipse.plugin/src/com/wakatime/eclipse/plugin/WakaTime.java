@@ -54,6 +54,8 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     // The shared instance
     public static WakaTime plugin;
     public static ILog logInstance;
+    public static String APP_NAME;
+    public static String ECLIPSE_VERSION;
     public static boolean DEBUG = false;
     public static final Logger log = new Logger();
 
@@ -65,7 +67,6 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public static final long FREQUENCY = 2; // frequency of heartbeats in minutes
     public static final String CONFIG = ".wakatime.cfg";
     public static final String VERSION = Platform.getBundle(PLUGIN_ID).getVersion().toString();
-    public static final String ECLIPSE_VERSION = Platform.getBundle("org.eclipse.platform").getVersion().toString();
 
     public String lastFile;
     public long lastTime = 0;
@@ -85,6 +86,20 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
         super.start(context);
         plugin = this;
+        
+        // discover app name and version
+        try {
+        	ECLIPSE_VERSION = Platform.getBundle("org.eclipse.platform").getVersion().toString();
+        	APP_NAME = "eclipse";
+        } catch (Exception e) {
+        	try {
+        		ECLIPSE_VERSION = Platform.getBundle("org.jkiss.dbeaver.core").getVersion().toString();
+        		APP_NAME = "dbeaver";
+        	} catch  (Exception e2) {
+        		ECLIPSE_VERSION = "unknown";
+        		APP_NAME = "eclipse";
+        	}
+        }
 
         editorListener = new CustomEditorListener();
     }
@@ -239,7 +254,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         cmds.add("--entity");
         cmds.add(WakaTime.fixFilePath(file));
         cmds.add("--plugin");
-        cmds.add("eclipse/"+ECLIPSE_VERSION+" eclipse-wakatime/"+VERSION);
+        cmds.add(APP_NAME + /"+ECLIPSE_VERSION+" eclipse-wakatime/"+VERSION);
         if (project != null) {
             cmds.add("--project");
             cmds.add(project);
