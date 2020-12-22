@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/com.wakatime.eclipse.feature_1.0.2.jar" id="com.wakatime.eclipse.feature" version="1.0.2">
+   <feature id="com.wakatime.eclipse.feature">
       <category name="com.wakatime"/>
    </feature>
    <category-def name="com.wakatime" label="WakaTime">
