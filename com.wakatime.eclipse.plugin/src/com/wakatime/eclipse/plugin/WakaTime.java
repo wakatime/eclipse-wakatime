@@ -86,19 +86,19 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
         super.start(context);
         plugin = this;
-        
+
         // discover app name and version
         try {
-        	ECLIPSE_VERSION = Platform.getBundle("org.eclipse.platform").getVersion().toString();
-        	APP_NAME = "eclipse";
+            ECLIPSE_VERSION = Platform.getBundle("org.eclipse.platform").getVersion().toString();
+            APP_NAME = "eclipse";
         } catch (Exception e) {
-        	try {
-        		ECLIPSE_VERSION = Platform.getBundle("org.jkiss.dbeaver.core").getVersion().toString();
-        		APP_NAME = "dbeaver";
-        	} catch  (Exception e2) {
-        		ECLIPSE_VERSION = "unknown";
-        		APP_NAME = "eclipse";
-        	}
+            try {
+                ECLIPSE_VERSION = Platform.getBundle("org.jkiss.dbeaver.core.product").getVersion().toString();
+                APP_NAME = "dbeaver";
+            } catch  (Exception e2) {
+                ECLIPSE_VERSION = "unknown";
+                APP_NAME = "eclipse";
+            }
         }
 
         editorListener = new CustomEditorListener();
@@ -117,7 +117,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             public void run() {
                 IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
                 if (window == null) return;
-                
+
                 String debug = ConfigFile.get("settings", "debug");
                 DEBUG = debug != null && debug.trim().equals("true");
                 WakaTime.log.debug("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
