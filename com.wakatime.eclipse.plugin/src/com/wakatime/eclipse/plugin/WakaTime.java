@@ -67,7 +67,6 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public static final String VERSION = Platform.getBundle(PLUGIN_ID).getVersion().toString();
     public static final String ECLIPSE_VERSION = Platform.getBundle("org.eclipse.platform").getVersion().toString();
 
-
     public String lastFile;
     public long lastTime = 0;
 
@@ -103,13 +102,9 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             public void run() {
                 IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
                 if (window == null) return;
-
-                // setup wakatime menu
-                //MenuHandler handler = new MenuHandler();
+                
                 String debug = ConfigFile.get("settings", "debug");
                 DEBUG = debug != null && debug.trim().equals("true");
-
-
                 WakaTime.log.debug("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
 
                 // prompt for apiKey if not set
