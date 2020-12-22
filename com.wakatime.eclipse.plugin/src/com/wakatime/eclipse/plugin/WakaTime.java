@@ -254,7 +254,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         cmds.add("--entity");
         cmds.add(WakaTime.fixFilePath(file));
         cmds.add("--plugin");
-        cmds.add(APP_NAME + /"+ECLIPSE_VERSION+" eclipse-wakatime/"+VERSION);
+        cmds.add(APP_NAME + "/" + ECLIPSE_VERSION + " eclipse-wakatime/" + VERSION);
         if (project != null) {
             cmds.add("--project");
             cmds.add(project);
