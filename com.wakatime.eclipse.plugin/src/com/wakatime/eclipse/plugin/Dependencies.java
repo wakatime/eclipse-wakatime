@@ -8,10 +8,6 @@ Website:     https://wakatime.com/
 
 package com.wakatime.eclipse.plugin;
 
-
-import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.FileLocator;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,7 +32,6 @@ import java.util.zip.ZipInputStream;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import org.osgi.framework.Bundle;
 
 public class Dependencies {
 
@@ -88,9 +83,9 @@ public class Dependencies {
             }
         }
         if (Dependencies.pythonLocation != null) {
-            WakaTime.log.debug("Found python binary: " + Dependencies.pythonLocation);
+        	Logger.debug("Found python binary: " + Dependencies.pythonLocation);
         } else {
-            WakaTime.log.error("Could not find python binary.");
+            Logger.error("Could not find python binary.");
         }
         return Dependencies.pythonLocation;
     }
@@ -123,17 +118,17 @@ public class Dependencies {
             while ((s = stdError.readLine()) != null) {
                 output += s;
             }
-            WakaTime.log.debug("wakatime cli version check output: \"" + output + "\"");
-            WakaTime.log.debug("wakatime cli version check exit code: " + p.exitValue());
+            Logger.debug("wakatime cli version check output: \"" + output + "\"");
+            Logger.debug("wakatime cli version check exit code: " + p.exitValue());
 
             if (p.exitValue() == 0) {
                 String cliVersion = latestCliVersion();
-                WakaTime.log.debug("Current cli version from GitHub: " + cliVersion);
+                Logger.debug("Current cli version from GitHub: " + cliVersion);
                 if (output.contains(cliVersion))
                     return false;
             }
         } catch (Exception e) {
-            WakaTime.log.error(e);
+        	Logger.error(e);
         }
         return true;
     }
@@ -148,7 +143,7 @@ public class Dependencies {
                 return m.group(1) + "." + m.group(2) + "." + m.group(3);
             }
         } catch (Exception e) {
-            WakaTime.log.error(e);
+        	Logger.error(e);
         }
         return "Unknown";
     }
@@ -180,7 +175,7 @@ public class Dependencies {
                 File oldZipFile = new File(zipFile);
                 oldZipFile.delete();
             } catch (IOException e) {
-                WakaTime.log.error(e);
+            	Logger.error(e);
             }
         }
     }
@@ -206,7 +201,7 @@ public class Dependencies {
                 try {
                     Dependencies.unzip(zipFile.getAbsolutePath(), targetDir);
                 } catch (IOException e) {
-                    WakaTime.log.warn(e);
+                	Logger.warn(e);
                 }
                 zipFile.delete();
             }
@@ -235,7 +230,7 @@ public class Dependencies {
             fos.close();
             return true;
         } catch (RuntimeException e) {
-            WakaTime.log.warn(e);
+        	Logger.warn(e);
             try {
                 // try downloading without verifying SSL cert (https://github.com/wakatime/jetbrains-wakatime/issues/46)
                 SSLContext SSL_CONTEXT = SSLContext.getInstance("SSL");
@@ -253,14 +248,14 @@ public class Dependencies {
                 fos.close();
                 return true;
             } catch (NoSuchAlgorithmException e1) {
-                WakaTime.log.warn(e1);
+            	Logger.warn(e1);
             } catch (KeyManagementException e1) {
-                WakaTime.log.warn(e1);
+            	Logger.warn(e1);
             } catch (IOException e1) {
-                WakaTime.log.warn(e1);
+            	Logger.warn(e1);
             }
         } catch (IOException e) {
-            WakaTime.log.warn(e);
+        	Logger.warn(e);
         }
 
         return false;
@@ -282,7 +277,7 @@ public class Dependencies {
             }
             inputStream.close();
         } catch (RuntimeException e) {
-            WakaTime.log.warn(e);
+        	Logger.warn(e);
             try {
                 // try downloading without verifying SSL cert (https://github.com/wakatime/jetbrains-wakatime/issues/46)
                 SSLContext SSL_CONTEXT = SSLContext.getInstance("SSL");
@@ -296,18 +291,18 @@ public class Dependencies {
                 }
                 inputStream.close();
             } catch (NoSuchAlgorithmException e1) {
-                WakaTime.log.warn(e1);
+            	Logger.warn(e1);
             } catch (KeyManagementException e1) {
-                WakaTime.log.warn(e1);
+            	Logger.warn(e1);
             } catch (UnknownHostException e1) {
-                WakaTime.log.warn(e1);
+            	Logger.warn(e1);
             } catch (IOException e1) {
-                WakaTime.log.warn(e1);
+            	Logger.warn(e1);
             }
         } catch (UnknownHostException e) {
-            WakaTime.log.warn(e);
+        	Logger.warn(e);
         } catch (Exception e) {
-            WakaTime.log.warn(e);
+        	Logger.warn(e);
         }
 
         return text.toString();
@@ -338,14 +333,14 @@ public class Dependencies {
                 System.setProperty("https.proxyPort", Integer.toString(proxyUrl.getPort()));
 
             } catch (MalformedURLException e) {
-                WakaTime.log.error("Proxy string must follow https://user:pass@host:port format: " + proxyConfig);
+            	Logger.error("Proxy string must follow https://user:pass@host:port format: " + proxyConfig);
             }
         }
     }
 
     private static boolean runPython(String path) {
         try {
-            WakaTime.log.debug(path + " --version");
+        	Logger.debug(path + " --version");
             String[] cmds = {path, "--version"};
             Process p = Runtime.getRuntime().exec(cmds);
             BufferedReader stdInput = new BufferedReader(new
@@ -362,14 +357,14 @@ public class Dependencies {
                 output += s;
             }
             if (output != "")
-                WakaTime.log.debug(output);
+            	Logger.debug(output);
             if (p.exitValue() != 0)
                 throw new Exception("NonZero Exit Code: " + p.exitValue());
 
             return true;
 
         } catch (Exception e) {
-            WakaTime.log.debug(e.toString());
+        	Logger.debug(e.toString());
             return false;
         }
     }
