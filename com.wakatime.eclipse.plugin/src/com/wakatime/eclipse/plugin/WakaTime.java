@@ -93,13 +93,19 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             APP_NAME = "eclipse";
         } catch (Exception e) {
             try {
-                ECLIPSE_VERSION = Platform.getBundle("org.jkiss.dbeaver.core.product").getVersion().toString();
+                ECLIPSE_VERSION = Platform.getBundle("org.jkiss.dbeaver.core").getVersion().toString();
                 APP_NAME = "dbeaver";
             } catch  (Exception e2) {
-                ECLIPSE_VERSION = "unknown";
-                APP_NAME = "eclipse";
+            	try {
+            		ECLIPSE_VERSION = Platform.getProduct().getDefiningBundle().getVersion().toString();
+                    APP_NAME = Platform.getProduct().getName();
+                } catch  (Exception e3) {
+                    ECLIPSE_VERSION = "unknown";
+                    APP_NAME = "eclipse";
+                }
             }
         }
+    	Logger.debug("Detected " + APP_NAME + " version: " + ECLIPSE_VERSION);
 
         editorListener = new CustomEditorListener();
     }
