@@ -3,10 +3,10 @@
    <description name="WakaTime" url="https://raw.githubusercontent.com/wakatime/eclipse-wakatime/master/update-site/">
       Fully automatic time tracking for Eclipse.
    </description>
-   <feature url="features/com.wakatime.eclipse.feature_3.0.5.jar" id="com.wakatime.eclipse.feature" version="3.0.5">
+   <feature url="features/com.wakatime.eclipse.feature_3.0.8.jar" id="com.wakatime.eclipse.feature" version="3.0.8">
       <category name="com.wakatime.eclipse.category"/>
    </feature>
-   <bundle id="com.wakatime.eclipse.plugin" version="3.0.5">
+   <bundle id="com.wakatime.eclipse.plugin" version="3.0.8">
       <category name="com.wakatime.eclipse.category"/>
    </bundle>
    <category-def name="com.wakatime.eclipse.category" label="WakaTime">
