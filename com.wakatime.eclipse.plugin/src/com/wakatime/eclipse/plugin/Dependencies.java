@@ -149,7 +149,7 @@ public class Dependencies {
     }
 
     public static String getCLILocation() {
-        return combinePaths(Dependencies.getResourcesLocation(), "wakatime-master", "wakatime", "cli.py");
+        return combinePaths(Dependencies.getResourcesLocation(), "legacy-python-cli-master", "wakatime", "cli.py");
     }
 
     public static void installCLI() {
