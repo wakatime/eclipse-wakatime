@@ -488,7 +488,7 @@ public class Dependencies {
 
     private static void makeExecutable(String filePath) throws IOException {
         File file = new File(filePath);
-        file.setExecutable(false);
+        file.setExecutable(true);
     }
 
     private static boolean isSymLink(File filepath) {
