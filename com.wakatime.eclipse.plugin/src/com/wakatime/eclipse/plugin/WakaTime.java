@@ -10,6 +10,7 @@ Website:     https://wakatime.com/
 package com.wakatime.eclipse.plugin;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.ArrayList;
@@ -49,9 +50,10 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     // The shared instance
     public static WakaTime plugin;
     public static ILog logInstance;
-    public static String APP_NAME;
+    public static String IDE_NAME;
     public static String ECLIPSE_VERSION;
     public static boolean DEBUG = false;
+    public static Boolean READY = false;
     public static final Logger log = new Logger();
 
     // Listeners
@@ -85,22 +87,22 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         // discover app name and version
         try {
             ECLIPSE_VERSION = Platform.getBundle("org.eclipse.platform").getVersion().toString();
-            APP_NAME = "eclipse";
+            IDE_NAME = "eclipse";
         } catch (Exception e) {
             try {
                 ECLIPSE_VERSION = Platform.getBundle("org.jkiss.dbeaver.core").getVersion().toString();
-                APP_NAME = "dbeaver";
+                IDE_NAME = "dbeaver";
             } catch  (Exception e2) {
             	try {
             		ECLIPSE_VERSION = Platform.getProduct().getDefiningBundle().getVersion().toString();
-                    APP_NAME = Platform.getProduct().getName();
+                    IDE_NAME = Platform.getProduct().getName();
                 } catch  (Exception e3) {
                     ECLIPSE_VERSION = "unknown";
-                    APP_NAME = "eclipse";
+                    IDE_NAME = "eclipse";
                 }
             }
         }
-    	Logger.debug("Detected " + APP_NAME + " version: " + ECLIPSE_VERSION);
+    	Logger.debug("Detected " + IDE_NAME + " version: " + ECLIPSE_VERSION);
 
         editorListener = new CustomEditorListener();
     }
@@ -119,29 +121,18 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                 IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
                 if (window == null) return;
 
-                String debug = ConfigFile.get("settings", "debug");
+                String debug = ConfigFile.get("settings", "debug", false);
                 DEBUG = debug != null && debug.trim().equals("true");
                 Logger.debug("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
 
                 // prompt for apiKey if not set
-                String apiKey = ConfigFile.get("settings", "api_key");
+                String apiKey = ConfigFile.get("settings", "api_key", false);
                 if (apiKey == "") {
                     promptForApiKey(window);
                 }
 
                 Dependencies.configureProxy();
-
-                if (!Dependencies.isPythonInstalled()) {
-                    Dependencies.installPython();
-                    if (!Dependencies.isPythonInstalled()) {
-                        MessageDialog dialog = new MessageDialog(window.getShell(),
-                            "Warning!", null,
-                            "WakaTime needs Python installed. Please install Python from python.org/downloads, then restart Eclipse.",
-                            MessageDialog.WARNING, new String[]{IDialogConstants.OK_LABEL}, 0);
-                        dialog.open();
-                    }
-                }
-                checkCore();
+                checkCLI();
 
                 if (window.getPartService() == null) return;
 
@@ -198,27 +189,35 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             window.getPartService().removePartListener(editorListener);
     }
 
-    private void checkCore() {
+    private void checkCLI() {
         if (!Dependencies.isCLIInstalled()) {
-        	Logger.info("Downloading and installing wakatime-cli ...");
+            Logger.info("Downloading and installing wakatime-cli...");
             Dependencies.installCLI();
+            WakaTime.READY = true;
             Logger.info("Finished downloading and installing wakatime-cli.");
         } else if (Dependencies.isCLIOld()) {
-        	Logger.info("Upgrading wakatime-cli ...");
-            Dependencies.upgradeCLI();
-            Logger.info("Finished upgrading wakatime-cli.");
+            if (System.getenv("WAKATIME_CLI_LOCATION") != null && !System.getenv("WAKATIME_CLI_LOCATION").trim().isEmpty()) {
+                File wakatimeCLI = new File(System.getenv("WAKATIME_CLI_LOCATION"));
+                if (wakatimeCLI.exists()) {
+                	Logger.error("$WAKATIME_CLI_LOCATION is out of date, please update it.");
+                }
+            } else {
+            	Logger.info("Upgrading wakatime-cli ...");
+                Dependencies.installCLI();
+                WakaTime.READY = true;
+                Logger.info("Finished upgrading wakatime-cli.");
+            }
         } else {
-        	Logger.info("wakatime-cli is up to date.");
+            WakaTime.READY = true;
+            Logger.info("wakatime-cli is up to date.");
         }
-        Logger.debug("CLI location: " + Dependencies.getCLILocation());
+        Dependencies.createSylink(Dependencies.combinePaths(Dependencies.getResourcesLocation(), "wakatime-cli"), Dependencies.getCLILocation());
+        Logger.debug("wakatime-cli location: " + Dependencies.getCLILocation());
     }
 
     public static void sendHeartbeat(String file, String project, boolean isWrite) {
-        if (!Dependencies.isPythonInstalled()) {
-        	Logger.error("Please install Python from python.org/downloads then restart your IDE.");
-            return;
-        }
-
+    	if (!WakaTime.READY) return;
+    	
         final String[] cmds = buildCliCommands(file, project, isWrite);
 
         Logger.debug(cmds.toString());
@@ -250,12 +249,11 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
     public static String[] buildCliCommands(String file, String project,  boolean isWrite) {
         ArrayList<String> cmds = new ArrayList<String>();
-        cmds.add(Dependencies.getPythonLocation());
         cmds.add(Dependencies.getCLILocation());
         cmds.add("--entity");
         cmds.add(WakaTime.fixFilePath(file));
         cmds.add("--plugin");
-        cmds.add(APP_NAME + "/" + ECLIPSE_VERSION + " eclipse-wakatime/" + VERSION);
+        cmds.add(IDE_NAME + "/" + ECLIPSE_VERSION + " eclipse-wakatime/" + VERSION);
         if (project != null) {
             cmds.add("--project");
             cmds.add(project);
@@ -299,12 +297,12 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     }
 
     public static void promptForApiKey(IWorkbenchWindow window) {
-        String apiKey = ConfigFile.get("settings", "api_key");
+        String apiKey = ConfigFile.get("settings", "api_key", false);
         InputDialog dialog = new InputDialog(window.getShell(),
             "WakaTime API Key", "Please enter your api key from http://wakatime.com/settings#apikey", apiKey, null);
         if (dialog.open() == IStatus.OK) {
           apiKey = dialog.getValue();
-          ConfigFile.set("settings", "api_key", apiKey);
+          ConfigFile.set("settings", "api_key", false, apiKey);
         }
     }
 
