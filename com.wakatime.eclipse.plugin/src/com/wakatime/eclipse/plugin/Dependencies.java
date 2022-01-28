@@ -27,19 +27,15 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermission;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static java.nio.file.attribute.PosixFilePermission.*;
 
 class Response {
     public int statusCode;
@@ -492,15 +488,7 @@ public class Dependencies {
 
     private static void makeExecutable(String filePath) throws IOException {
         File file = new File(filePath);
-        Set<PosixFilePermission> perms = new HashSet<>();
-        perms.add(OWNER_READ);
-        perms.add(OWNER_WRITE);
-        perms.add(OWNER_EXECUTE);
-        perms.add(GROUP_READ);
-        perms.add(GROUP_EXECUTE);
-        perms.add(OTHERS_READ);
-        perms.add(OTHERS_EXECUTE);
-        Files.setPosixFilePermissions(file.toPath(), perms);
+        file.setExecutable(false);
     }
 
     private static boolean isSymLink(File filepath) {
