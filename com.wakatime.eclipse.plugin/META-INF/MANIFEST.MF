@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: WakaTime
 Bundle-SymbolicName: com.wakatime.eclipse.plugin;singleton:=true
-Bundle-Version: 3.0.9
+Bundle-Version: 4.0.0
 Bundle-Activator: com.wakatime.eclipse.plugin.WakaTime
 Bundle-Vendor: WAKATIME
 Require-Bundle: org.eclipse.ui,
