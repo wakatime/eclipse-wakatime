@@ -62,7 +62,6 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
     // Constants
     public static final long FREQUENCY = 2; // frequency of heartbeats in minutes
-    public static final String CONFIG = ".wakatime.cfg";
     public static final String VERSION = Platform.getBundle(PLUGIN_ID).getVersion().toString();
 
     public String lastFile;
