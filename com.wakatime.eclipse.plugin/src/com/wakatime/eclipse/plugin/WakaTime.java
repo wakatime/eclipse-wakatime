@@ -210,7 +210,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             WakaTime.READY = true;
             Logger.info("wakatime-cli is up to date.");
         }
-        Dependencies.createSylink(Dependencies.combinePaths(Dependencies.getResourcesLocation(), "wakatime-cli"), Dependencies.getCLILocation());
+        Dependencies.createSymlink(Dependencies.combinePaths(Dependencies.getResourcesLocation(), "wakatime-cli"), Dependencies.getCLILocation());
         Logger.debug("wakatime-cli location: " + Dependencies.getCLILocation());
     }
 
