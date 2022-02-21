@@ -50,9 +50,11 @@ class Response {
 }
 
 public class Dependencies {
-	private static String resourcesLocation = null;
+    private static String resourcesLocation = null;
     private static String cliVersion = null;
     private static Boolean alpha = null;
+    private static String originalProxyHost = null;
+    private static String originalProxyPort = null;
 
     public static String getResourcesLocation() {
         if (Dependencies.resourcesLocation != null) return Dependencies.resourcesLocation;
@@ -179,12 +181,12 @@ public class Dependencies {
             try {
                 unzip(zipFile, outputDir);
                 if (!isWindows()) {
-	              makeExecutable(getCLILocation());
-	            }
+                    makeExecutable(getCLILocation());
+                }
                 File oldZipFile = new File(zipFile);
                 oldZipFile.delete();
             } catch (IOException e) {
-                Logger.error(e);
+                WakaTime.log.warn(e);
             }
         }
     }
@@ -200,7 +202,8 @@ public class Dependencies {
             "freebsd-amd64",
             "freebsd-arm",
             "linux-386",
-            "linux-amd64", "linux-arm",
+            "linux-amd64",
+            "linux-arm",
             "linux-arm64",
             "netbsd-386",
             "netbsd-amd64",
@@ -246,6 +249,8 @@ public class Dependencies {
 
         Logger.debug("DownloadFile(" + downloadUrl.toString() + ")");
 
+        setupProxy();
+
         ReadableByteChannel rbc = null;
         FileOutputStream fos = null;
         try {
@@ -253,6 +258,7 @@ public class Dependencies {
             fos = new FileOutputStream(saveAs);
             fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
             fos.close();
+            teardownProxy();
             return true;
         } catch (RuntimeException e) {
             Logger.warn(e);
@@ -272,6 +278,7 @@ public class Dependencies {
                 }
                 inputStream.close();
                 fos.close();
+                teardownProxy();
                 return true;
             } catch (NoSuchAlgorithmException e1) {
                 Logger.warn(e1);
@@ -284,6 +291,7 @@ public class Dependencies {
             Logger.warn(e);
         }
 
+        teardownProxy();
         return false;
     }
 
@@ -299,6 +307,8 @@ public class Dependencies {
 
         Logger.debug("getUrlAsString(" + downloadUrl.toString() + ")");
 
+        setupProxy();
+
         String responseLastModified = null;
         int statusCode = -1;
         try {
@@ -308,7 +318,10 @@ public class Dependencies {
                 conn.setRequestProperty("If-Modified-Since", lastModified.trim());
             }
             statusCode = conn.getResponseCode();
-            if (statusCode == 304) return null;
+            if (statusCode == 304) {
+                teardownProxy();
+                return null;
+            }
             InputStream inputStream = downloadUrl.openStream();
             byte[] buffer = new byte[4096];
             while (inputStream.read(buffer) != -1) {
@@ -329,7 +342,10 @@ public class Dependencies {
                     conn.setRequestProperty("If-Modified-Since", lastModified.trim());
                 }
                 statusCode = conn.getResponseCode();
-                if (statusCode == 304) return null;
+                if (statusCode == 304) {
+                    teardownProxy();
+                    return null;
+                }
                 InputStream inputStream = conn.getInputStream();
                 byte[] buffer = new byte[4096];
                 while (inputStream.read(buffer) != -1) {
@@ -352,13 +368,16 @@ public class Dependencies {
             Logger.warn(e);
         }
 
+        teardownProxy();
         return new Response(statusCode, text.toString(), responseLastModified);
     }
 
     /**
      * Configures a proxy if one is set in ~/.wakatime.cfg.
      */
-    public static void configureProxy() {
+    private static void setupProxy() {
+        originalProxyHost = System.getProperty("https.proxyHost");
+        originalProxyPort = System.getProperty("https.proxyPort");
         String proxyConfig = ConfigFile.get("settings", "proxy", false);
         if (proxyConfig != null && !proxyConfig.trim().equals("")) {
             try {
@@ -381,9 +400,14 @@ public class Dependencies {
                 }
 
             } catch (MalformedURLException e) {
-                Logger.error("Proxy string must follow https://user:pass@host:port format: " + proxyConfig);
+                WakaTime.log.error("Proxy string must follow https://user:pass@host:port format: " + proxyConfig);
             }
         }
+    }
+
+    private static void teardownProxy() {
+        if (originalProxyHost != null) System.setProperty("https.proxyHost", originalProxyHost);
+        if (originalProxyPort != null) System.setProperty("https.proxyPort", originalProxyPort);
     }
 
     private static void unzip(String zipFile, File outputDir) throws IOException {

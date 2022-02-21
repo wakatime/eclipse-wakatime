@@ -130,7 +130,6 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                     promptForApiKey(window);
                 }
 
-                Dependencies.configureProxy();
                 checkCLI();
 
                 if (window.getPartService() == null) return;
