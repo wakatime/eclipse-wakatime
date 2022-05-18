@@ -244,7 +244,9 @@ public class Dependencies {
         try {
             downloadUrl = new URL(url);
         } catch (MalformedURLException e) {
+            Logger.error("DownloadFile(" + url + ") failed to init new URL");
             Logger.error(e);
+            return false;
         }
 
         Logger.debug("DownloadFile(" + downloadUrl.toString() + ")");
@@ -302,7 +304,9 @@ public class Dependencies {
         try {
             downloadUrl = new URL(url);
         } catch (MalformedURLException e) {
+            Logger.error("getUrlAsString(" + url + ") failed to init new URL");
             Logger.error(e);
+            return null;
         }
 
         Logger.debug("getUrlAsString(" + downloadUrl.toString() + ")");
