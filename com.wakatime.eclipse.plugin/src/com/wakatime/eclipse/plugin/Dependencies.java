@@ -485,7 +485,7 @@ public class Dependencies {
 
     public static String architecture() {
         String arch = System.getProperty("os.arch");
-        if (arch.contains("386") || arch.contains("32")) return "386";
+        if (arch.contains("386") || arch.contains("32") || arch.contains("x86")) return "386";
         if (arch.equals("aarch64")) return "arm64";
         if (osname().equals("darwin") && arch.contains("arm")) return "arm64";
         if (arch.contains("64")) return "amd64";
