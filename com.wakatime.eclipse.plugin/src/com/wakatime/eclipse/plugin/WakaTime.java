@@ -92,8 +92,8 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                 ECLIPSE_VERSION = Platform.getBundle("org.jkiss.dbeaver.core").getVersion().toString();
                 IDE_NAME = "dbeaver";
             } catch  (Exception e2) {
-            	try {
-            		ECLIPSE_VERSION = Platform.getProduct().getDefiningBundle().getVersion().toString();
+                try {
+                    ECLIPSE_VERSION = Platform.getProduct().getDefiningBundle().getVersion().toString();
                     IDE_NAME = Platform.getProduct().getName();
                 } catch  (Exception e3) {
                     ECLIPSE_VERSION = "unknown";
@@ -101,7 +101,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                 }
             }
         }
-    	Logger.debug("Detected " + IDE_NAME + " version: " + ECLIPSE_VERSION);
+        Logger.debug("Detected " + IDE_NAME + " version: " + ECLIPSE_VERSION);
 
         editorListener = new CustomEditorListener();
     }
@@ -197,10 +197,10 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             if (System.getenv("WAKATIME_CLI_LOCATION") != null && !System.getenv("WAKATIME_CLI_LOCATION").trim().isEmpty()) {
                 File wakatimeCLI = new File(System.getenv("WAKATIME_CLI_LOCATION"));
                 if (wakatimeCLI.exists()) {
-                	Logger.error("$WAKATIME_CLI_LOCATION is out of date, please update it.");
+                    Logger.error("$WAKATIME_CLI_LOCATION is out of date, please update it.");
                 }
             } else {
-            	Logger.info("Upgrading wakatime-cli ...");
+                Logger.info("Upgrading wakatime-cli ...");
                 Dependencies.installCLI();
                 WakaTime.READY = true;
                 Logger.info("Finished upgrading wakatime-cli.");
@@ -214,8 +214,8 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     }
 
     public static void sendHeartbeat(String file, String project, boolean isWrite) {
-    	if (!WakaTime.READY) return;
-    	
+        if (!WakaTime.READY) return;
+
         final String[] cmds = buildCliCommands(file, project, isWrite);
 
         Logger.debug(cmds.toString());
@@ -230,15 +230,15 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                          proc.waitFor();
                          String s;
                          while ((s = stdInput.readLine()) != null) {
-                        	 Logger.debug(s);
+                             Logger.debug(s);
                          }
                          while ((s = stdError.readLine()) != null) {
-                        	 Logger.debug(s);
+                             Logger.debug(s);
                          }
                          Logger.debug("Command finished with return value: "+proc.exitValue());
                      }
                  } catch (Exception e) {
-                	 Logger.error(e);
+                     Logger.error(e);
                  }
              }
          };
@@ -259,7 +259,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         if (isWrite)
             cmds.add("--write");
         if (DEBUG) {
-        	Logger.info(cmds.toString());
+            Logger.info(cmds.toString());
             cmds.add("--verbose");
         }
         return cmds.toArray(new String[cmds.size()]);
