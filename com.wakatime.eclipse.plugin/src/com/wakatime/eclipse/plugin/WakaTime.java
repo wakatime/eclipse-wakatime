@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.net.URI;
 
 import org.eclipse.core.commands.IExecutionListener;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.ILog;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
@@ -64,7 +65,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
     public String lastFile;
     public long lastTime = 0;
-    public String lastProject;
+    public IProject lastProject;
 
     /**
      * The constructor

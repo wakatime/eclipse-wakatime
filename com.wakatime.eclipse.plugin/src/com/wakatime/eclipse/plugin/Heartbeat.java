@@ -23,7 +23,7 @@ public class Heartbeat {
     public String entityType;
     public long timestamp;
     public Boolean isWrite;
-    public String project;
+    public IProject project;
     public Integer lineCount;
     public Integer lineNumber;
     public Integer cursorPosition;
@@ -38,12 +38,7 @@ public class Heartbeat {
         this.entityType = "file";
         this.timestamp = System.currentTimeMillis() / 1000;
         this.isWrite = isWrite;
-        this.project = this.getProject(activeEditor);
-        WakaTime.getDefault().lastProject = this.project;
-        this.lineCount = null;
-        this.lineNumber = null;
-        this.cursorPosition = null;
-        this.alternateLanguage = null;
+        this.setProject(activeEditor);
         this.isBuilding = false;
         this.isUnsavedFile = isDatabase;
         if (!isDatabase) {
@@ -109,14 +104,20 @@ public class Heartbeat {
         cmds.add(this.entity);
         cmds.add("--plugin");
         cmds.add(WakaTime.getDefault().IDE_NAME + "/" + WakaTime.getDefault().ECLIPSE_VERSION + " eclipse-wakatime/" + WakaTime.getDefault().VERSION);
-        if (this.project != null) {
+        if (this.project != null && this.project.getName() != null) {
             cmds.add("--project");
-            cmds.add(this.project);
+            cmds.add(this.project.getName());
         }
         if (this.isWrite)
             cmds.add("--write");
-        if (this.isUnsavedFile)
+        if (this.isUnsavedFile) {
             cmds.add("--is-unsaved-entity");
+        }
+        String projectFolder = this.getProjectFolder();
+        if (projectFolder != null) {
+            cmds.add("--project-folder");
+            cmds.add(projectFolder);
+        }
         if (this.isBuilding) {
             cmds.add("--category");
             cmds.add("building");
@@ -144,33 +145,56 @@ public class Heartbeat {
         return cmds.toArray(new String[cmds.size()]);
     }
 
-    private String getProject(IEditorPart activeEditor) {
-
-        if (activeEditor == null) return getDefaultProject();
+    private void setProject(IEditorPart activeEditor) {
+        if (activeEditor == null) {
+            setDefaultProject();
+            return;
+        }
 
         IEditorInput input = activeEditor.getEditorInput();
-        if (input == null) return getDefaultProject();
+        if (input == null) {
+            setDefaultProject();
+            return;
+        }
 
         if (input instanceof FileEditorInput) {
             IProject project = ((FileEditorInput)input).getFile().getProject();
-            if (project != null && project.getName() != null) return project.getName();
+            if (project != null && project.getName() != null) {
+                this.project = project;
+                WakaTime.getDefault().lastProject = this.project;
+                return;
+            }
         }
 
         IProject project = input.getAdapter(IProject.class);
-        if (project != null && project.getName() != null) return project.getName();
+        if (project != null && project.getName() != null) {
+            this.project = project;
+            WakaTime.getDefault().lastProject = this.project;
+            return;
+        }
 
         IResource resource = input.getAdapter(IResource.class);
-        if (resource == null) return getDefaultProject();
+        if (resource == null) {
+            setDefaultProject();
+            return;
+        }
 
         IProject resourceProject = resource.getProject();
-        if (resourceProject == null || resourceProject.getName() == null) return getDefaultProject();
+        if (resourceProject == null || resourceProject.getName() == null) {
+            setDefaultProject();
+            return;
+        }
 
-        return resourceProject.getName();
+        this.project = resourceProject;
+        WakaTime.getDefault().lastProject = this.project;
     }
 
-    private String getDefaultProject() {
-        String lastProject = WakaTime.getDefault().lastProject;
-        if (lastProject != null) return lastProject;
+    private void setDefaultProject() {
+        IProject lastProject = WakaTime.getDefault().lastProject;
+        if (lastProject != null) {
+            this.project = lastProject;
+            return;
+        }
 
         try {
             IWorkspace workspace = ResourcesPlugin.getWorkspace();
@@ -178,14 +202,24 @@ public class Heartbeat {
             IProject[] projects = root.getProjects();
             for (IProject project : projects) {
                 if (project != null && project.isOpen()) {
-                    return project.getName();
+                    this.project = project;
+                    return;
                 }
             }
         } catch (Exception e) {
             WakaTime.log.debug(e);
         }
+    }
 
-        return null;
+    private String getProjectFolder() {
+        if (this.project == null) return null;
+
+        try {
+            return this.project.getFullPath().toFile().toURI().getPath();
+        } catch (Exception e) {
+            WakaTime.log.debug(e);
+            return null;
+        }
     }
 
     private void fixFilePath() {
