@@ -145,37 +145,10 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
                 // listen for focused file change
                 if (window.getPartService() != null) window.getPartService().addPartListener(editorListener);
-                
-                // listen for auto-builds
-                Job.getJobManager().addJobChangeListener(new JobChangeAdapter() {
-                    @Override
-                    public void aboutToRun(IJobChangeEvent event) {
-                        if (event.getJob().belongsTo(ResourcesPlugin.FAMILY_AUTO_BUILD)) {
-                        	// WakaTime.log.debug("Auto-build about to run.");
-                        	debouncer.debounce("auto-build", new Runnable() {
-                        	    @Override public void run() {
-                                    // TODO: set a periodic timer to send heartbeats for long builds when user left for coffee
-                        	        WakaTime.getDefault().isAutoBuilding = true;
-                        	        WakaTime.handleActivity(null, false);
-                        	    }
-                        	}, 3, TimeUnit.SECONDS);
-                        }
-                    }
 
-                    @Override
-                    public void done(IJobChangeEvent event) {
-                        if (event.getJob().belongsTo(ResourcesPlugin.FAMILY_AUTO_BUILD)) {
-                            // WakaTime.log.debug("Auto-build completed.");
-                        	debouncer.debounce("auto-build", new Runnable() {
-                        	    @Override public void run() {
-                        	        WakaTime.getDefault().isAutoBuilding = false;
-                        	        WakaTime.handleActivity(null, false);
-                        	    }
-                        	}, 1, TimeUnit.MILLISECONDS);
-                        }
-                    }
-                });
-                
+                // listen for auto-builds
+                WakaTime.setupAutoBuildWatcher();
+
                 Logger.debug("Finished initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
             }
         });
@@ -188,15 +161,15 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public void stop(BundleContext context) throws Exception {
         plugin = null;
         super.stop(context);
-        
+
         IWorkbench workbench = PlatformUI.getWorkbench();
-        
+
         ICommandService commandService = (ICommandService) workbench.getService(ICommandService.class);
         commandService.removeExecutionListener(executionListener);
 
         IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
         if (window != null && window.getPartService() != null) window.getPartService().removePartListener(editorListener);
-        
+
         debouncer.shutdown();
     }
 
@@ -234,6 +207,41 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         }
         Dependencies.createSymlink(Dependencies.combinePaths(Dependencies.getResourcesLocation(), "wakatime-cli"), Dependencies.getCLILocation());
         Logger.debug("wakatime-cli location: " + Dependencies.getCLILocation());
+    }
+
+    private static void setupAutoBuildWatcher() {
+        try {
+            Job.getJobManager().addJobChangeListener(new JobChangeAdapter() {
+                @Override
+                public void aboutToRun(IJobChangeEvent event) {
+                    if (event.getJob().belongsTo(ResourcesPlugin.FAMILY_AUTO_BUILD)) {
+                        // WakaTime.log.debug("Auto-build about to run.");
+                        WakaTime.getDefault().debouncer.debounce("auto-build", new Runnable() {
+                            @Override public void run() {
+                                // TODO: set a periodic timer to send heartbeats for long builds when user left for coffee
+                                WakaTime.getDefault().isAutoBuilding = true;
+                                WakaTime.handleActivity(null, false);
+                            }
+                        }, 3, TimeUnit.SECONDS);
+                    }
+                }
+
+                @Override
+                public void done(IJobChangeEvent event) {
+                    if (event.getJob().belongsTo(ResourcesPlugin.FAMILY_AUTO_BUILD)) {
+                        // WakaTime.log.debug("Auto-build completed.");
+                        WakaTime.getDefault().debouncer.debounce("auto-build", new Runnable() {
+                            @Override public void run() {
+                                WakaTime.getDefault().isAutoBuilding = false;
+                                WakaTime.handleActivity(null, false);
+                            }
+                        }, 1, TimeUnit.MILLISECONDS);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            WakaTime.log.debug(e);
+        }
     }
 
     public static void handleActivity(IEditorPart activeEditor, boolean isWrite) {
