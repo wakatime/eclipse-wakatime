@@ -6,12 +6,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Debouncer {
+public class Debouncer<T> {
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private final ConcurrentHashMap<String, Future<?>> delayedMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Future<Object>> delayedMap = new ConcurrentHashMap<String, Future<Object>>();
 
     public void debounce(final String key, final Runnable runnable, long delay, TimeUnit unit) {
-        final Future<?> prev = delayedMap.put(key, scheduler.schedule(new Runnable() {
+        final Future<Object> prev = delayedMap.put(key, (Future<Object>) scheduler.schedule(new Runnable() {
             @Override
             public void run() {
                 try {
