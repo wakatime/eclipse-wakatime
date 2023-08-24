@@ -16,7 +16,7 @@ public class CustomMouseListener implements MouseListener {
 
     @Override
     public void mouseDown(MouseEvent e) {
-        WakaTime.log.debug("CustomMouseListener.mouseDown");
+        // WakaTime.log.debug("CustomMouseListener.mouseDown");
 
         WakaTime.handleActivity(null, false);
     }
