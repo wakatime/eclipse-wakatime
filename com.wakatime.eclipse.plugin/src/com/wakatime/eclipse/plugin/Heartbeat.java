@@ -1,5 +1,6 @@
 package com.wakatime.eclipse.plugin;
 
+import java.net.URI;
 import java.util.ArrayList;
 
 import org.eclipse.core.resources.IProject;
@@ -213,13 +214,11 @@ public class Heartbeat {
 
     private String getProjectFolder() {
         if (this.project == null) return null;
-
-        try {
-            return this.project.getFullPath().toFile().toURI().getPath();
-        } catch (Exception e) {
-            WakaTime.log.debug(e);
-            return null;
-        }
+        
+        URI root = this.project.getLocationURI();
+        if (root == null) return null;
+        
+        return root.getPath();
     }
 
     private void fixFilePath() {
