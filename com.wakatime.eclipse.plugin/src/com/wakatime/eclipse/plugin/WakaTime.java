@@ -13,12 +13,17 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.commands.IExecutionListener;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.ILog;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.jobs.IJobChangeEvent;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.IEditorInput;
@@ -47,10 +52,12 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public static final String PLUGIN_ID = "com.wakatime.eclipse.plugin";
 
     // The shared instance
-    public static WakaTime plugin;
-    public static ILog logInstance;
     public String IDE_NAME;
     public String ECLIPSE_VERSION;
+    public boolean isBuilding = false;
+    public boolean isAutoBuilding = false;
+    public static WakaTime plugin;
+    public static ILog logInstance;
     public static boolean DEBUG = false;
     public static Boolean READY = false;
     public static final Logger log = new Logger();
@@ -58,6 +65,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     // Listeners
     private static CustomEditorListener editorListener;
     private static IExecutionListener executionListener;
+    public Debouncer debouncer;
 
     // Constants
     public static final long FREQUENCY = 2; // frequency of heartbeats in minutes
@@ -66,6 +74,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public String lastFile;
     public long lastTime = 0;
     public IProject lastProject;
+    public boolean lastIsBuilding = false;
 
     /**
      * The constructor
@@ -104,6 +113,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         Logger.debug("Detected " + IDE_NAME + " version: " + ECLIPSE_VERSION);
 
         editorListener = new CustomEditorListener();
+        debouncer = new Debouncer();
     }
 
     @Override
@@ -135,7 +145,37 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
                 // listen for focused file change
                 if (window.getPartService() != null) window.getPartService().addPartListener(editorListener);
+                
+                // listen for auto-builds
+                Job.getJobManager().addJobChangeListener(new JobChangeAdapter() {
+                    @Override
+                    public void aboutToRun(IJobChangeEvent event) {
+                        if (event.getJob().belongsTo(ResourcesPlugin.FAMILY_AUTO_BUILD)) {
+                        	// WakaTime.log.debug("Auto-build about to run.");
+                        	debouncer.debounce("auto-build", new Runnable() {
+                        	    @Override public void run() {
+                                    // TODO: set a periodic timer to send heartbeats for long builds when user left for coffee
+                        	        WakaTime.getDefault().isAutoBuilding = true;
+                        	        WakaTime.handleActivity(null, false);
+                        	    }
+                        	}, 3, TimeUnit.SECONDS);
+                        }
+                    }
 
+                    @Override
+                    public void done(IJobChangeEvent event) {
+                        if (event.getJob().belongsTo(ResourcesPlugin.FAMILY_AUTO_BUILD)) {
+                            // WakaTime.log.debug("Auto-build completed.");
+                        	debouncer.debounce("auto-build", new Runnable() {
+                        	    @Override public void run() {
+                        	        WakaTime.getDefault().isAutoBuilding = false;
+                        	        WakaTime.handleActivity(null, false);
+                        	    }
+                        	}, 1, TimeUnit.MILLISECONDS);
+                        }
+                    }
+                });
+                
                 Logger.debug("Finished initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
             }
         });
@@ -148,16 +188,22 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public void stop(BundleContext context) throws Exception {
         plugin = null;
         super.stop(context);
+        
+        IWorkbench workbench = PlatformUI.getWorkbench();
+        
+        ICommandService commandService = (ICommandService) workbench.getService(ICommandService.class);
+        commandService.removeExecutionListener(executionListener);
 
-        IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-        if (window != null && window.getPartService() != null)
-            window.getPartService().removePartListener(editorListener);
+        IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
+        if (window != null && window.getPartService() != null) window.getPartService().removePartListener(editorListener);
+        
+        debouncer.shutdown();
     }
 
     public static void promptForApiKey(IWorkbenchWindow window) {
         String apiKey = ConfigFile.get("settings", "api_key", false);
         InputDialog dialog = new InputDialog(window.getShell(),
-            "WakaTime API Key", "Please enter your api key from http://wakatime.com/settings#apikey", apiKey, null);
+            "WakaTime API Key", "Enter your api key from http://wakatime.com/api-key", apiKey, null);
         if (dialog.open() == IStatus.OK) {
           apiKey = dialog.getValue();
           ConfigFile.set("settings", "api_key", false, apiKey);
@@ -201,6 +247,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             sendHeartbeat(heartbeat);
             WakaTime.getDefault().lastFile = heartbeat.entity;
             WakaTime.getDefault().lastTime = heartbeat.timestamp;
+            WakaTime.getDefault().lastIsBuilding = heartbeat.isBuilding;
         }
     }
 

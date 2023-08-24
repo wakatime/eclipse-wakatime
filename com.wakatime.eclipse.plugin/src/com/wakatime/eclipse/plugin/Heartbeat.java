@@ -40,7 +40,7 @@ public class Heartbeat {
         this.timestamp = System.currentTimeMillis() / 1000;
         this.isWrite = isWrite;
         this.setProject(activeEditor);
-        this.isBuilding = false;
+        this.isBuilding = WakaTime.getDefault().isBuilding || WakaTime.getDefault().isAutoBuilding;
         this.isUnsavedFile = isDatabase;
         if (!isDatabase) {
             this.fixFilePath();
@@ -94,6 +94,8 @@ public class Heartbeat {
         if (this.isWrite) return true;
 
         if (WakaTime.getDefault().lastTime + WakaTime.FREQUENCY * 60 < this.timestamp) return true;
+        
+        if (this.isBuilding != WakaTime.getDefault().lastIsBuilding) return true;
 
         return !this.entity.equals(WakaTime.getDefault().lastFile);
     }
