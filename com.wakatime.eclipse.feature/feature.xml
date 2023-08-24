@@ -2,7 +2,7 @@
 <feature
       id="com.wakatime.eclipse.feature"
       label="WakaTime"
-      version="4.2.0"
+      version="4.2.1"
       provider-name="WAKATIME">
 
    <description url="https://wakatime.com">
@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          id="com.wakatime.eclipse.plugin"
          download-size="0"
          install-size="0"
-         version="4.2.0"
+         version="4.2.1"
          unpack="false"/>
 
 </feature>
