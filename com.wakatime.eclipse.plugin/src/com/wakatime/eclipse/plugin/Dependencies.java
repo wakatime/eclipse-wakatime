@@ -220,7 +220,7 @@ public class Dependencies {
     }
 
     private static void reportMissingPlatformSupport(String osname, String architecture) {
-        String url = "https://api.wakatime.com/api/v1/cli-missing?osname=" + osname + "&architecture=" + architecture + "&plugin=" + WakaTime.IDE_NAME;
+        String url = "https://api.wakatime.com/api/v1/cli-missing?osname=" + osname + "&architecture=" + architecture + "&plugin=" + WakaTime.getDefault().IDE_NAME;
         try {
             getUrlAsString(url, null);
         } catch (Exception e) {
@@ -304,12 +304,9 @@ public class Dependencies {
         try {
             downloadUrl = new URL(url);
         } catch (MalformedURLException e) {
-            Logger.error("getUrlAsString(" + url + ") failed to init new URL");
             Logger.error(e);
             return null;
         }
-
-        Logger.debug("getUrlAsString(" + downloadUrl.toString() + ")");
 
         setupProxy();
 
@@ -485,10 +482,10 @@ public class Dependencies {
 
     public static String architecture() {
         String arch = System.getProperty("os.arch");
-        if (arch.contains("386") || arch.contains("32") || arch.contains("x86")) return "386";
         if (arch.equals("aarch64")) return "arm64";
         if (osname().equals("darwin") && arch.contains("arm")) return "arm64";
         if (arch.contains("64")) return "amd64";
+        if (arch.contains("386") || arch.contains("32") || arch.contains("x86")) return "386";
         return arch;
     }
 

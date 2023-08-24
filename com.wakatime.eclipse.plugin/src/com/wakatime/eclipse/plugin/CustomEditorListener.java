@@ -9,88 +9,69 @@ Website:     https://wakatime.com/
 
 package com.wakatime.eclipse.plugin;
 
-import java.net.URI;
-
-
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.IWorkbenchPartReference;
-import org.eclipse.ui.texteditor.AbstractTextEditor;
-import org.eclipse.ui.IURIEditorInput;
 
 public class CustomEditorListener implements IPartListener2 {
 
     @Override
     public void partActivated(IWorkbenchPartReference partRef) {
-        IEditorPart part = partRef.getPage().getActiveEditor();
-        if (!(part instanceof AbstractTextEditor))
-            return;
+        // WakaTime.log.debug("CustomEditorListener.partActivated");
 
-        // log new active file
-        IEditorInput input = part.getEditorInput();
-        if (input instanceof IURIEditorInput) {
-            URI uri = ((IURIEditorInput)input).getURI();
-            if (uri != null && uri.getPath() != null) {
-                String currentFile = uri.getPath();
-                long currentTime = System.currentTimeMillis() / 1000;
-                if (!currentFile.equals(WakaTime.getDefault().lastFile) || WakaTime.getDefault().lastTime + WakaTime.FREQUENCY * 60 < currentTime) {
-                    WakaTime.sendHeartbeat(currentFile, WakaTime.getActiveProject(), false);
-                    WakaTime.getDefault().lastFile = currentFile;
-                    WakaTime.getDefault().lastTime = currentTime;
-                }
-            }
-        }
-    }
-
-    @Override
-    public void partBroughtToTop(IWorkbenchPartReference partRef) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void partClosed(IWorkbenchPartReference partRef) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void partDeactivated(IWorkbenchPartReference partRef) {
-        // TODO Auto-generated method stub
-
+        IEditorPart activeEditor = partRef.getPage().getActiveEditor();
+        WakaTime.handleActivity(activeEditor, false);
     }
 
     @Override
     public void partOpened(IWorkbenchPartReference partRef) {
-
-        // listen for caret movement
+        // listen for caret movement in newly active editor
+        IEditorPart editor = null;
         try {
-            AbstractTextEditor e = (AbstractTextEditor)((IEditorReference) partRef).getEditor(false);
-            ((StyledText)e.getAdapter(Control.class)).addCaretListener(new CustomCaretListener());
+            editor = ((IEditorReference) partRef).getEditor(false);
         } catch (Exception e) {
+            WakaTime.log.debug(e);
+            return;
+        }
+        if (editor == null) return;
+
+        Control adapter = editor.getAdapter(Control.class);
+        if (adapter == null) return;
+
+        // listen for mouse clicks
+        try {
+            adapter.addMouseListener(new CustomMouseListener());
+        } catch (Exception e) {
+            WakaTime.log.error(e);
+        }
+
+        // listen for cursor movement and typing
+        try {
+            ((StyledText) adapter).addCaretListener(new CustomCaretListener());
+        } catch (Exception e) {
+            WakaTime.log.error(e);
         }
     }
 
     @Override
-    public void partHidden(IWorkbenchPartReference partRef) {
-        // TODO Auto-generated method stub
-
-    }
+    public void partHidden(IWorkbenchPartReference partRef) { }
 
     @Override
-    public void partVisible(IWorkbenchPartReference partRef) {
-        // TODO Auto-generated method stub
-
-    }
+    public void partVisible(IWorkbenchPartReference partRef) { }
 
     @Override
-    public void partInputChanged(IWorkbenchPartReference partRef) {
-        // TODO Auto-generated method stub
+    public void partInputChanged(IWorkbenchPartReference partRef) { }
 
-    }
+    @Override
+    public void partBroughtToTop(IWorkbenchPartReference partRef) { }
+
+    @Override
+    public void partClosed(IWorkbenchPartReference partRef) { }
+
+    @Override
+    public void partDeactivated(IWorkbenchPartReference partRef) { }
 
 }

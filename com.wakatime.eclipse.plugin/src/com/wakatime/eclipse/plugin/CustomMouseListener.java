@@ -9,16 +9,22 @@ Website:     https://wakatime.com/
 
 package com.wakatime.eclipse.plugin;
 
-import org.eclipse.swt.custom.CaretEvent;
-import org.eclipse.swt.custom.CaretListener;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
 
-public class CustomCaretListener implements CaretListener {
+public class CustomMouseListener implements MouseListener {
 
     @Override
-    public void caretMoved(CaretEvent event) {
-        // WakaTime.log.debug("CustomCaretListener.caretMoved");
+    public void mouseDown(MouseEvent e) {
+        WakaTime.log.debug("CustomMouseListener.mouseDown");
 
         WakaTime.handleActivity(null, false);
     }
+
+    @Override
+    public void mouseDoubleClick(MouseEvent e) { }
+
+    @Override
+    public void mouseUp(MouseEvent e) { }
 
 }

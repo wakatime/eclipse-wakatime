@@ -13,30 +13,28 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.util.ArrayList;
 
 import org.eclipse.core.commands.IExecutionListener;
-import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.ILog;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.InputDialog;
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IFileEditorInput;
+import org.eclipse.ui.IPartService;
+import org.eclipse.ui.IPathEditorInput;
 import org.eclipse.ui.IStartup;
 import org.eclipse.ui.IURIEditorInput;
 import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.IWorkbenchPartSite;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
-import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
-import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -50,8 +48,8 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     // The shared instance
     public static WakaTime plugin;
     public static ILog logInstance;
-    public static String IDE_NAME;
-    public static String ECLIPSE_VERSION;
+    public String IDE_NAME;
+    public String ECLIPSE_VERSION;
     public static boolean DEBUG = false;
     public static Boolean READY = false;
     public static final Logger log = new Logger();
@@ -62,10 +60,11 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
     // Constants
     public static final long FREQUENCY = 2; // frequency of heartbeats in minutes
-    public static final String VERSION = Platform.getBundle(PLUGIN_ID).getVersion().toString();
+    public final String VERSION = Platform.getBundle(PLUGIN_ID).getVersion().toString();
 
     public String lastFile;
     public long lastTime = 0;
+    public String lastProject;
 
     /**
      * The constructor
@@ -110,15 +109,15 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public void earlyStartup() {
         final IWorkbench workbench = PlatformUI.getWorkbench();
 
-        // listen for save file events
-        ICommandService commandService = (ICommandService) workbench.getService(ICommandService.class);
-        executionListener = new CustomExecutionListener();
-        commandService.addExecutionListener(executionListener);
-
         workbench.getDisplay().asyncExec(new Runnable() {
             public void run() {
                 IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
                 if (window == null) return;
+
+                // listen for file saved events
+                ICommandService commandService = (ICommandService) workbench.getService(ICommandService.class);
+                executionListener = new CustomExecutionListener();
+                commandService.addExecutionListener(executionListener);
 
                 String debug = ConfigFile.get("settings", "debug", false);
                 DEBUG = debug != null && debug.trim().equals("true");
@@ -126,48 +125,15 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
                 // prompt for apiKey if not set
                 String apiKey = ConfigFile.get("settings", "api_key", false);
-                if (apiKey == "") {
-                    promptForApiKey(window);
-                }
+                if (apiKey == "") promptForApiKey(window);
 
                 checkCLI();
 
-                if (window.getPartService() == null) return;
+                // log file if one is already opened on startup
+                WakaTime.handleActivity(null, false);
 
-                // listen for caret movement
-                if (window.getPartService().getActivePartReference() != null &&
-                    window.getPartService().getActivePartReference().getPage() != null &&
-                    window.getPartService().getActivePartReference().getPage().getActiveEditor() != null
-                ) {
-                    IEditorPart part = window.getPartService().getActivePartReference().getPage().getActiveEditor();
-                    if (!(part instanceof AbstractTextEditor))
-                        return;
-                    ((StyledText)part.getAdapter(Control.class)).addCaretListener(new CustomCaretListener());
-                }
-
-                // listen for change of active file
-                window.getPartService().addPartListener(editorListener);
-
-                if (window.getPartService().getActivePart() == null) return;
-                if (window.getPartService().getActivePart().getSite() == null) return;
-                if (window.getPartService().getActivePart().getSite().getPage() == null) return;
-                if (window.getPartService().getActivePart().getSite().getPage().getActiveEditor() == null) return;
-                if (window.getPartService().getActivePart().getSite().getPage().getActiveEditor().getEditorInput() == null) return;
-
-                // log file if one is opened by default
-                IEditorInput input = window.getPartService().getActivePart().getSite().getPage().getActiveEditor().getEditorInput();
-                if (input instanceof IURIEditorInput) {
-                    URI uri = ((IURIEditorInput)input).getURI();
-                    if (uri != null && uri.getPath() != null) {
-                        String currentFile = uri.getPath();
-                        long currentTime = System.currentTimeMillis() / 1000;
-                        if (!currentFile.equals(WakaTime.getDefault().lastFile) || WakaTime.getDefault().lastTime + WakaTime.FREQUENCY * 60 < currentTime) {
-                            WakaTime.sendHeartbeat(currentFile, WakaTime.getActiveProject(), false);
-                            WakaTime.getDefault().lastFile = currentFile;
-                            WakaTime.getDefault().lastTime = currentTime;
-                        }
-                    }
-                }
+                // listen for focused file change
+                if (window.getPartService() != null) window.getPartService().addPartListener(editorListener);
 
                 Logger.debug("Finished initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
             }
@@ -187,12 +153,22 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             window.getPartService().removePartListener(editorListener);
     }
 
+    public static void promptForApiKey(IWorkbenchWindow window) {
+        String apiKey = ConfigFile.get("settings", "api_key", false);
+        InputDialog dialog = new InputDialog(window.getShell(),
+            "WakaTime API Key", "Please enter your api key from http://wakatime.com/settings#apikey", apiKey, null);
+        if (dialog.open() == IStatus.OK) {
+          apiKey = dialog.getValue();
+          ConfigFile.set("settings", "api_key", false, apiKey);
+        }
+    }
+
     private void checkCLI() {
         if (!Dependencies.isCLIInstalled()) {
-            Logger.info("Downloading and installing wakatime-cli...");
+            Logger.debug("Downloading and installing wakatime-cli...");
             Dependencies.installCLI();
             WakaTime.READY = true;
-            Logger.info("Finished downloading and installing wakatime-cli.");
+            Logger.debug("Finished downloading and installing wakatime-cli.");
         } else if (Dependencies.isCLIOld()) {
             if (System.getenv("WAKATIME_CLI_LOCATION") != null && !System.getenv("WAKATIME_CLI_LOCATION").trim().isEmpty()) {
                 File wakatimeCLI = new File(System.getenv("WAKATIME_CLI_LOCATION"));
@@ -200,23 +176,37 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                     Logger.error("$WAKATIME_CLI_LOCATION is out of date, please update it.");
                 }
             } else {
-                Logger.info("Upgrading wakatime-cli ...");
+                Logger.debug("Upgrading wakatime-cli ...");
                 Dependencies.installCLI();
                 WakaTime.READY = true;
-                Logger.info("Finished upgrading wakatime-cli.");
+                Logger.debug("Finished upgrading wakatime-cli.");
             }
         } else {
             WakaTime.READY = true;
-            Logger.info("wakatime-cli is up to date.");
+            Logger.debug("wakatime-cli is up to date.");
         }
         Dependencies.createSymlink(Dependencies.combinePaths(Dependencies.getResourcesLocation(), "wakatime-cli"), Dependencies.getCLILocation());
-        Logger.debug("wakatime-cli location: " + Dependencies.getCLILocation());
+        Logger.info("wakatime-cli location: " + Dependencies.getCLILocation());
     }
 
-    public static void sendHeartbeat(String file, String project, boolean isWrite) {
+    public static void handleActivity(IEditorPart activeEditor, boolean isWrite) {
+        if (activeEditor == null) activeEditor = getActiveEditor();
+        if (activeEditor == null) return;
+
+        Heartbeat heartbeat = WakaTime.getHeartbeat(activeEditor, isWrite);
+        if (heartbeat == null) return;
+
+        if (heartbeat.canSend()) {
+            sendHeartbeat(heartbeat);
+            WakaTime.getDefault().lastFile = heartbeat.entity;
+            WakaTime.getDefault().lastTime = heartbeat.timestamp;
+        }
+    }
+
+    private static void sendHeartbeat(Heartbeat heartbeat) {
         if (!WakaTime.READY) return;
 
-        final String[] cmds = buildCliCommands(file, project, isWrite);
+        final String[] cmds = heartbeat.toCliCommands();
 
         Logger.debug(cmds.toString());
 
@@ -245,63 +235,83 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
          new Thread(r).start();
     }
 
-    public static String[] buildCliCommands(String file, String project,  boolean isWrite) {
-        ArrayList<String> cmds = new ArrayList<String>();
-        cmds.add(Dependencies.getCLILocation());
-        cmds.add("--entity");
-        cmds.add(WakaTime.fixFilePath(file));
-        cmds.add("--plugin");
-        cmds.add(IDE_NAME + "/" + ECLIPSE_VERSION + " eclipse-wakatime/" + VERSION);
-        if (project != null) {
-            cmds.add("--project");
-            cmds.add(project);
-        }
-        if (isWrite)
-            cmds.add("--write");
-        if (DEBUG) {
-            Logger.info(cmds.toString());
-            cmds.add("--verbose");
-        }
-        return cmds.toArray(new String[cmds.size()]);
-    }
-
-    public static String getActiveProject() {
+    private static IEditorPart getActiveEditor() {
         IWorkbench workbench = PlatformUI.getWorkbench();
         IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
         if (window == null) return null;
-        if (window.getPartService() == null) return null;
-        if (window.getPartService().getActivePart() == null) return null;
-        if (window.getPartService().getActivePart().getSite() == null) return null;
-        if (window.getPartService().getActivePart().getSite().getPage() == null) return null;
-        if (window.getPartService().getActivePart().getSite().getPage().getActiveEditor() == null) return null;
-        if (window.getPartService().getActivePart().getSite().getPage().getActiveEditor().getEditorInput() == null) return null;
 
-        IEditorInput input = window.getPartService().getActivePart().getSite().getPage().getActiveEditor().getEditorInput();
+        final IPartService partService = window.getPartService();
+        if (partService == null) return null;
 
-        IProject project = null;
+        final IWorkbenchPart part = partService.getActivePart();
+        if (part == null) return null;
 
-        if (input instanceof FileEditorInput) {
-            project = ((FileEditorInput)input).getFile().getProject();
-        }
+        final IWorkbenchPartSite site = part.getSite();
+        if (site == null) return null;
 
-        if (project == null)
-            return null;
+        final IWorkbenchPage page = site.getPage();
+        if (page == null) return null;
 
-        return project.getName();
+        return page.getActiveEditor();
     }
 
-    public static String fixFilePath(String file) {
-        return file.replaceFirst("^[\\\\/]([A-Z]:[\\\\/])", "$1");
+    private static Heartbeat getHeartbeat(IEditorPart activeEditor, Boolean isWrite) {
+        if (activeEditor == null) return null;
+
+        IEditorInput editorInput = activeEditor.getEditorInput();
+        if (editorInput == null) return null;
+
+        try {
+            if (editorInput instanceof IURIEditorInput) {
+                final URI uri = ((IURIEditorInput) editorInput).getURI();
+                if (uri != null && uri.getPath() != null && !uri.getPath().trim().equals("")) {
+                    return new Heartbeat(uri.getPath(), isWrite, activeEditor, false);
+                }
+            } else if (editorInput instanceof IFileEditorInput) {
+                final URI uri = ((IFileEditorInput) editorInput).getFile().getLocationURI();
+                if (uri != null && uri.getPath() != null && !uri.getPath().trim().equals("")) {
+                    return new Heartbeat(uri.getPath(), isWrite, activeEditor, false);
+                }
+            } else if (editorInput instanceof IPathEditorInput) {
+                return new Heartbeat(((IPathEditorInput) editorInput).getPath().makeAbsolute().toString(), isWrite, activeEditor, false);
+            }
+
+        } catch(Exception e) {
+            Logger.error(e);
+        }
+
+        try {
+            Class C = editorInput.getClass();
+            while (C != null) {
+              if (C.getName().equals("org.jkiss.dbeaver.ui.editors.DatabaseEditorInput")) {
+                  try {
+                        return new Heartbeat(C.getMethod("getDatabaseObject").invoke(editorInput).toString(), isWrite, activeEditor, true);
+                  } catch (Exception e) {
+                      Logger.error(e);
+                    }
+              }
+              C = C.getSuperclass();
+            }
+
+        } catch(Exception e) {
+            Logger.error(e);
+        }
+
+        return null;
     }
 
-    public static void promptForApiKey(IWorkbenchWindow window) {
-        String apiKey = ConfigFile.get("settings", "api_key", false);
-        InputDialog dialog = new InputDialog(window.getShell(),
-            "WakaTime API Key", "Please enter your api key from http://wakatime.com/settings#apikey", apiKey, null);
-        if (dialog.open() == IStatus.OK) {
-          apiKey = dialog.getValue();
-          ConfigFile.set("settings", "api_key", false, apiKey);
+    private static boolean isInstanceOf(Object o, String classPath) {
+        @SuppressWarnings("rawtypes")
+        Class C = o.getClass();
+        while (C != null) {
+            // Logger.debug(C.getName());
+            if (C.getName().equals(classPath)) return true;
+            /*for (Method method : C.getDeclaredMethods()) {
+                Logger.debug(method.getName());
+            }*/
+            C = C.getSuperclass();
         }
+        return false;
     }
 
     /**
