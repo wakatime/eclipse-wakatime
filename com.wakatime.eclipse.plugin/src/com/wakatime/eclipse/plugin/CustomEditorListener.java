@@ -45,14 +45,14 @@ public class CustomEditorListener implements IPartListener2 {
         try {
             adapter.addMouseListener(new CustomMouseListener());
         } catch (Exception e) {
-            WakaTime.log.error(e);
+            WakaTime.log.debug(e);
         }
 
         // listen for cursor movement and typing
         try {
             ((StyledText) adapter).addCaretListener(new CustomCaretListener());
         } catch (Exception e) {
-            WakaTime.log.error(e);
+            WakaTime.log.debug(e);
         }
     }
 
