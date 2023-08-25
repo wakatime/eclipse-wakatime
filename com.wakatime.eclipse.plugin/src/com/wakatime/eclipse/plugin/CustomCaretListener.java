@@ -16,9 +16,10 @@ public class CustomCaretListener implements CaretListener {
 
     @Override
     public void caretMoved(CaretEvent event) {
-        // WakaTime.log.debug("CustomCaretListener.caretMoved");
+        // Logger.debug("CustomCaretListener.caretMoved");
 
-        WakaTime.handleActivity(null, false);
+        Heartbeat heartbeat = WakaTime.getHeartbeat(null, false);
+        WakaTime.processHeartbeat(heartbeat);
     }
 
 }

@@ -9,17 +9,17 @@ public class Logger {
     }
 
     public static void debug(String msg) {
-        if (WakaTime.DEBUG)
+        if (WakaTime.getDefault().DEBUG)
             logMessage(msg, Status.INFO, null);
     }
 
     public static void debug(String msg, Exception e) {
-        if (WakaTime.DEBUG)
+        if (WakaTime.getDefault().DEBUG)
             logMessage(msg, Status.ERROR, e);
     }
 
     public static void debug(Exception e) {
-        if (WakaTime.DEBUG)
+        if (WakaTime.getDefault().DEBUG)
             logMessage("Debug", Status.ERROR, e);
     }
 
@@ -44,7 +44,7 @@ public class Logger {
     }
 
     public static void logMessage(String msg, int level, Exception e) {
-        if (WakaTime.logInstance != null)
-            WakaTime.logInstance.log(new Status(level, WakaTime.PLUGIN_ID, Status.OK, msg, e));
+        if (WakaTime.getDefault().logInstance != null)
+            WakaTime.getDefault().logInstance.log(new Status(level, WakaTime.PLUGIN_ID, Status.OK, msg, e));
     }
 }

@@ -12,7 +12,10 @@ package com.wakatime.eclipse.plugin;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.net.URI;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.commands.IExecutionListener;
@@ -57,22 +60,26 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
     public boolean isBuilding = false;
     public boolean isAutoBuilding = false;
     public static WakaTime plugin;
-    public static ILog logInstance;
-    public static boolean DEBUG = false;
+    public ILog logInstance;
+    public boolean DEBUG = false;
     public static Boolean READY = false;
-    public static final Logger log = new Logger();
 
     // Listeners
     private static CustomEditorListener editorListener;
     private static IExecutionListener executionListener;
-    public Debouncer debouncer;
+
+    // Schedulers
+    public Debouncer<Object> debouncer;
+    public ScheduledExecutorService buildScheduler;
+    public ScheduledExecutorService autoBuildScheduler;
 
     // Constants
-    public static final long FREQUENCY = 2; // frequency of heartbeats in minutes
+    public static final BigDecimal FREQUENCY = new BigDecimal(2 * 60);
+    public static final int BUILD_THRESHOLD = 3;
     public final String VERSION = Platform.getBundle(PLUGIN_ID).getVersion().toString();
 
     public String lastFile;
-    public long lastTime = 0;
+    public BigDecimal lastTime = new BigDecimal(0);
     public IProject lastProject;
     public boolean lastIsBuilding = false;
 
@@ -113,7 +120,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         Logger.debug("Detected " + IDE_NAME + " version: " + ECLIPSE_VERSION);
 
         editorListener = new CustomEditorListener();
-        debouncer = new Debouncer();
+        debouncer = new Debouncer<Object>();
     }
 
     @Override
@@ -122,34 +129,39 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
         workbench.getDisplay().asyncExec(new Runnable() {
             public void run() {
-                IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
-                if (window == null) return;
+                try {
+                    IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
+                    if (window == null) return;
 
-                // listen for file saved events
-                ICommandService commandService = (ICommandService) workbench.getService(ICommandService.class);
-                executionListener = new CustomExecutionListener();
-                commandService.addExecutionListener(executionListener);
+                    String debug = ConfigFile.get("settings", "debug", false);
+                    WakaTime.getDefault().DEBUG = debug != null && debug.trim().equals("true");
+                    Logger.debug("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
 
-                String debug = ConfigFile.get("settings", "debug", false);
-                DEBUG = debug != null && debug.trim().equals("true");
-                Logger.debug("Initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
+                    // listen for file saved events
+                    ICommandService commandService = workbench.getService(ICommandService.class);
+                    executionListener = new CustomExecutionListener();
+                    commandService.addExecutionListener(executionListener);
 
-                // prompt for apiKey if not set
-                String apiKey = ConfigFile.get("settings", "api_key", false);
-                if (apiKey == "") promptForApiKey(window);
+                    // prompt for apiKey if not set
+                    String apiKey = ConfigFile.get("settings", "api_key", false);
+                    if (apiKey == "") promptForApiKey(window);
 
-                checkCLI();
+                    checkCLI();
 
-                // log file if one is already opened on startup
-                WakaTime.handleActivity(null, false);
+                    // log file if one is already opened on startup
+                    Heartbeat heartbeat = WakaTime.getHeartbeat(null, false);
+                    WakaTime.processHeartbeat(heartbeat);
 
-                // listen for focused file change
-                if (window.getPartService() != null) window.getPartService().addPartListener(editorListener);
+                    // listen for focused file change
+                    if (window.getPartService() != null) window.getPartService().addPartListener(editorListener);
 
-                // listen for auto-builds
-                WakaTime.setupAutoBuildWatcher();
+                    // listen for auto-builds
+                    WakaTime.setupAutoBuildWatcher();
 
-                Logger.debug("Finished initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
+                    Logger.debug("Finished initializing WakaTime plugin (https://wakatime.com) v"+VERSION);
+                } catch (Exception e) {
+                    Logger.debug(e);
+                }
             }
         });
     }
@@ -164,11 +176,13 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
         IWorkbench workbench = PlatformUI.getWorkbench();
 
-        ICommandService commandService = (ICommandService) workbench.getService(ICommandService.class);
-        commandService.removeExecutionListener(executionListener);
+        if (workbench != null) {
+            ICommandService commandService = workbench.getService(ICommandService.class);
+            if (commandService != null) commandService.removeExecutionListener(executionListener);
 
-        IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
-        if (window != null && window.getPartService() != null) window.getPartService().removePartListener(editorListener);
+            IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
+            if (window != null && window.getPartService() != null) window.getPartService().removePartListener(editorListener);
+        }
 
         debouncer.shutdown();
     }
@@ -215,48 +229,48 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
                 @Override
                 public void aboutToRun(IJobChangeEvent event) {
                     if (event.getJob().belongsTo(ResourcesPlugin.FAMILY_AUTO_BUILD)) {
-                        // WakaTime.log.debug("Auto-build about to run.");
+                        // Logger.debug("Auto-build about to run.");
+                        final Heartbeat heartbeat = WakaTime.getHeartbeat(null, false, true);
                         WakaTime.getDefault().debouncer.debounce("auto-build", new Runnable() {
                             @Override public void run() {
                                 // TODO: set a periodic timer to send heartbeats for long builds when user left for coffee
                                 WakaTime.getDefault().isAutoBuilding = true;
-                                WakaTime.handleActivity(null, false);
+                                WakaTime.processHeartbeat(heartbeat);
+                                WakaTime.startWatchingAutoBuild();
                             }
-                        }, 3, TimeUnit.SECONDS);
+                        }, WakaTime.BUILD_THRESHOLD, TimeUnit.SECONDS);
                     }
                 }
 
                 @Override
                 public void done(IJobChangeEvent event) {
                     if (event.getJob().belongsTo(ResourcesPlugin.FAMILY_AUTO_BUILD)) {
-                        // WakaTime.log.debug("Auto-build completed.");
+                        // Logger.debug("Auto-build completed.");
+                        final Heartbeat heartbeat = WakaTime.getHeartbeat(null, false, false);
                         WakaTime.getDefault().debouncer.debounce("auto-build", new Runnable() {
                             @Override public void run() {
                                 WakaTime.getDefault().isAutoBuilding = false;
-                                WakaTime.handleActivity(null, false);
+                                WakaTime.processHeartbeat(heartbeat);
+                                WakaTime.stopWatchingAutoBuild();
                             }
                         }, 1, TimeUnit.MILLISECONDS);
                     }
                 }
             });
         } catch (Exception e) {
-            WakaTime.log.debug(e);
+            Logger.debug(e);
         }
     }
 
-    public static void handleActivity(IEditorPart activeEditor, boolean isWrite) {
-        if (activeEditor == null) activeEditor = getActiveEditor();
-        if (activeEditor == null) return;
-
-        Heartbeat heartbeat = WakaTime.getHeartbeat(activeEditor, isWrite);
+    public static void processHeartbeat(Heartbeat heartbeat) {
         if (heartbeat == null) return;
+        if (!heartbeat.canSend()) return;
 
-        if (heartbeat.canSend()) {
-            sendHeartbeat(heartbeat);
-            WakaTime.getDefault().lastFile = heartbeat.entity;
-            WakaTime.getDefault().lastTime = heartbeat.timestamp;
-            WakaTime.getDefault().lastIsBuilding = heartbeat.isBuilding;
-        }
+        sendHeartbeat(heartbeat);
+
+        WakaTime.getDefault().lastFile = heartbeat.entity;
+        WakaTime.getDefault().lastTime = heartbeat.timestamp;
+        WakaTime.getDefault().lastIsBuilding = heartbeat.isBuilding;
     }
 
     private static void sendHeartbeat(Heartbeat heartbeat) {
@@ -270,18 +284,18 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             public void run() {
                 try {
                      Process proc = Runtime.getRuntime().exec(cmds);
-                     if (DEBUG) {
+                     if (getDefault().DEBUG) {
                          BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
                          BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
                          proc.waitFor();
                          String s;
                          while ((s = stdInput.readLine()) != null) {
-                             Logger.debug(s);
+                             if (!s.trim().equals("")) Logger.debug(s);
                          }
                          while ((s = stdError.readLine()) != null) {
-                             Logger.debug(s);
+                             if (!s.trim().equals("")) Logger.debug(s);
                          }
-                         Logger.debug("Command finished with return value: "+proc.exitValue());
+                         Logger.debug("Command finished with return value: " + proc.exitValue());
                      }
                  } catch (Exception e) {
                      Logger.error(e);
@@ -311,7 +325,12 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         return page.getActiveEditor();
     }
 
-    private static Heartbeat getHeartbeat(IEditorPart activeEditor, Boolean isWrite) {
+    public static Heartbeat getHeartbeat(IEditorPart activeEditor, boolean isWrite) {
+        return WakaTime.getHeartbeat(activeEditor, isWrite, false);
+    }
+
+    public static Heartbeat getHeartbeat(IEditorPart activeEditor, boolean isWrite, Boolean isBuilding) {
+        if (activeEditor == null) activeEditor = getActiveEditor();
         if (activeEditor == null) return null;
 
         IEditorInput editorInput = activeEditor.getEditorInput();
@@ -321,15 +340,15 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             if (editorInput instanceof IURIEditorInput) {
                 final URI uri = ((IURIEditorInput) editorInput).getURI();
                 if (uri != null && uri.getPath() != null && !uri.getPath().trim().equals("")) {
-                    return new Heartbeat(uri.getPath(), isWrite, activeEditor, false);
+                    return new Heartbeat(uri.getPath(), isWrite, activeEditor, false, isBuilding);
                 }
             } else if (editorInput instanceof IFileEditorInput) {
                 final URI uri = ((IFileEditorInput) editorInput).getFile().getLocationURI();
                 if (uri != null && uri.getPath() != null && !uri.getPath().trim().equals("")) {
-                    return new Heartbeat(uri.getPath(), isWrite, activeEditor, false);
+                    return new Heartbeat(uri.getPath(), isWrite, activeEditor, false, isBuilding);
                 }
             } else if (editorInput instanceof IPathEditorInput) {
-                return new Heartbeat(((IPathEditorInput) editorInput).getPath().makeAbsolute().toString(), isWrite, activeEditor, false);
+                return new Heartbeat(((IPathEditorInput) editorInput).getPath().makeAbsolute().toString(), isWrite, activeEditor, false, isBuilding);
             }
 
         } catch(Exception e) {
@@ -341,7 +360,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
             while (C != null) {
               if (C.getName().equals("org.jkiss.dbeaver.ui.editors.DatabaseEditorInput")) {
                   try {
-                        return new Heartbeat(C.getMethod("getDatabaseObject").invoke(editorInput).toString(), isWrite, activeEditor, true);
+                        return new Heartbeat(C.getMethod("getDatabaseObject").invoke(editorInput).toString(), isWrite, activeEditor, true, isBuilding);
                   } catch (Exception e) {
                       Logger.error(e);
                     }
@@ -356,18 +375,62 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
         return null;
     }
 
-    private static boolean isInstanceOf(Object o, String classPath) {
-        @SuppressWarnings("rawtypes")
-        Class C = o.getClass();
-        while (C != null) {
-            // Logger.debug(C.getName());
-            if (C.getName().equals(classPath)) return true;
-            /*for (Method method : C.getDeclaredMethods()) {
-                Logger.debug(method.getName());
-            }*/
-            C = C.getSuperclass();
+    public static BigDecimal getCurrentTimestamp() {
+        return new BigDecimal(String.valueOf(System.currentTimeMillis() / 1000.0));
+    }
+
+    public static void startWatchingBuild() {
+        if (WakaTime.getDefault().buildScheduler != null) {
+            try {
+                WakaTime.getDefault().buildScheduler.shutdownNow();
+            } catch (Exception e) {
+                Logger.debug(e);
+            }
         }
-        return false;
+        WakaTime.getDefault().buildScheduler = Executors.newSingleThreadScheduledExecutor();
+        WakaTime.getDefault().buildScheduler.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                Heartbeat heartbeat = WakaTime.getHeartbeat(null, false);
+                WakaTime.processHeartbeat(heartbeat);
+                if (!WakaTime.getDefault().isBuilding && WakaTime.getDefault().buildScheduler != null) WakaTime.getDefault().buildScheduler.shutdownNow();
+            }
+        }, 90, 90, TimeUnit.SECONDS);
+    }
+
+    public static void startWatchingAutoBuild() {
+        if (WakaTime.getDefault().autoBuildScheduler != null) {
+            try {
+                WakaTime.getDefault().autoBuildScheduler.shutdownNow();
+            } catch (Exception e) {
+                Logger.debug(e);
+            }
+        }
+        WakaTime.getDefault().autoBuildScheduler = Executors.newSingleThreadScheduledExecutor();
+        WakaTime.getDefault().autoBuildScheduler.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                Heartbeat heartbeat = WakaTime.getHeartbeat(null, false);
+                WakaTime.processHeartbeat(heartbeat);
+                if (!WakaTime.getDefault().isAutoBuilding && WakaTime.getDefault().autoBuildScheduler != null) WakaTime.getDefault().autoBuildScheduler.shutdownNow();
+            }
+        }, 90, 90, TimeUnit.SECONDS);
+    }
+
+    public static void stopWatchingBuild() {
+        try {
+            if (WakaTime.getDefault().buildScheduler != null) WakaTime.getDefault().buildScheduler.shutdownNow();
+        } catch (Exception e) {
+            Logger.debug(e);
+        }
+    }
+
+    public static void stopWatchingAutoBuild() {
+        try {
+            if (WakaTime.getDefault().autoBuildScheduler != null) WakaTime.getDefault().autoBuildScheduler.shutdownNow();
+        } catch (Exception e) {
+            Logger.debug(e);
+        }
     }
 
     /**

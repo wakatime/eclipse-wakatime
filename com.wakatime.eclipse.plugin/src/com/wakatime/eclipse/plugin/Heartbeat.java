@@ -1,5 +1,6 @@
 package com.wakatime.eclipse.plugin;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
 
@@ -22,25 +23,30 @@ import org.eclipse.ui.texteditor.ITextEditor;
 public class Heartbeat {
     public String entity;
     public String entityType;
-    public long timestamp;
-    public Boolean isWrite;
+    public BigDecimal timestamp;
+    public boolean isWrite;
     public IProject project;
     public Integer lineCount;
     public Integer lineNumber;
     public Integer cursorPosition;
     public String alternateLanguage;
-    public Boolean isBuilding;
-    public Boolean isUnsavedFile;
+    public boolean isBuilding;
+    public boolean isUnsavedFile;
+    public boolean isUnsavedFile2;
 
-    public Heartbeat(String entity, Boolean isWrite, IEditorPart activeEditor, Boolean isDatabase) {
+    public Heartbeat(String entity, boolean isWrite, IEditorPart activeEditor, boolean isDatabase, Boolean isBuilding) {
         super();
 
         this.entity = entity;
         this.entityType = "file";
-        this.timestamp = System.currentTimeMillis() / 1000;
+        this.timestamp = WakaTime.getCurrentTimestamp();
         this.isWrite = isWrite;
         this.setProject(activeEditor);
-        this.isBuilding = WakaTime.getDefault().isBuilding || WakaTime.getDefault().isAutoBuilding;
+        if (isBuilding != null) {
+            this.isBuilding = isBuilding;
+        } else {
+            this.isBuilding = WakaTime.getDefault().isBuilding || WakaTime.getDefault().isAutoBuilding;
+        }
         this.isUnsavedFile = isDatabase;
         if (!isDatabase) {
             this.fixFilePath();
@@ -86,18 +92,22 @@ public class Heartbeat {
             this.lineNumber = line + 1;
 
         } catch (BadLocationException e) {
-            WakaTime.log.debug(e);
+            Logger.debug(e);
         }
     }
 
     public boolean canSend() {
         if (this.isWrite) return true;
 
-        if (WakaTime.getDefault().lastTime + WakaTime.FREQUENCY * 60 < this.timestamp) return true;
-        
+        if (enoughTimePassed()) return true;
+
         if (this.isBuilding != WakaTime.getDefault().lastIsBuilding) return true;
 
         return !this.entity.equals(WakaTime.getDefault().lastFile);
+    }
+    
+    public boolean enoughTimePassed() {
+        return WakaTime.getDefault().lastTime.add(WakaTime.FREQUENCY).compareTo(this.timestamp) < 0;
     }
 
     public String[] toCliCommands() {
@@ -105,6 +115,8 @@ public class Heartbeat {
         cmds.add(Dependencies.getCLILocation());
         cmds.add("--entity");
         cmds.add(this.entity);
+        cmds.add("--time");
+        cmds.add(this.timestamp.toPlainString());
         cmds.add("--plugin");
         cmds.add(WakaTime.getDefault().IDE_NAME + "/" + WakaTime.getDefault().ECLIPSE_VERSION + " eclipse-wakatime/" + WakaTime.getDefault().VERSION);
         if (this.project != null && this.project.getName() != null) {
@@ -210,16 +222,16 @@ public class Heartbeat {
                 }
             }
         } catch (Exception e) {
-            WakaTime.log.debug(e);
+            Logger.debug(e);
         }
     }
 
     private String getProjectFolder() {
         if (this.project == null) return null;
-        
+
         URI root = this.project.getLocationURI();
         if (root == null) return null;
-        
+
         return root.getPath();
     }
 

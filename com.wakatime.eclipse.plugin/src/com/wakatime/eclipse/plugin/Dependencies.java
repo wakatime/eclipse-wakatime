@@ -186,7 +186,7 @@ public class Dependencies {
                 File oldZipFile = new File(zipFile);
                 oldZipFile.delete();
             } catch (IOException e) {
-                WakaTime.log.warn(e);
+                Logger.warn(e);
             }
         }
     }
@@ -401,7 +401,7 @@ public class Dependencies {
                 }
 
             } catch (MalformedURLException e) {
-                WakaTime.log.error("Proxy string must follow https://user:pass@host:port format: " + proxyConfig);
+                Logger.error("Proxy string must follow https://user:pass@host:port format: " + proxyConfig);
             }
         }
     }

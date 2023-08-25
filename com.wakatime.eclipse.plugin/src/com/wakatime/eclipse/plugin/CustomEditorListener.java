@@ -20,10 +20,11 @@ public class CustomEditorListener implements IPartListener2 {
 
     @Override
     public void partActivated(IWorkbenchPartReference partRef) {
-        // WakaTime.log.debug("CustomEditorListener.partActivated");
+        // Logger.debug("CustomEditorListener.partActivated");
 
         IEditorPart activeEditor = partRef.getPage().getActiveEditor();
-        WakaTime.handleActivity(activeEditor, false);
+        Heartbeat heartbeat = WakaTime.getHeartbeat(activeEditor, false);
+        WakaTime.processHeartbeat(heartbeat);
     }
 
     @Override
@@ -32,8 +33,11 @@ public class CustomEditorListener implements IPartListener2 {
         IEditorPart editor = null;
         try {
             editor = ((IEditorReference) partRef).getEditor(false);
+        } catch (java.lang.ClassCastException e) {
+            // expected to fail sometimes, ignore it
+            return;
         } catch (Exception e) {
-            WakaTime.log.debug(e);
+            Logger.debug(e);
             return;
         }
         if (editor == null) return;
@@ -45,14 +49,14 @@ public class CustomEditorListener implements IPartListener2 {
         try {
             adapter.addMouseListener(new CustomMouseListener());
         } catch (Exception e) {
-            WakaTime.log.debug(e);
+            Logger.debug(e);
         }
 
         // listen for cursor movement and typing
         try {
             ((StyledText) adapter).addCaretListener(new CustomCaretListener());
         } catch (Exception e) {
-            WakaTime.log.debug(e);
+            Logger.debug(e);
         }
     }
 

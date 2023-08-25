@@ -21,7 +21,7 @@ import org.eclipse.ui.IWorkbenchCommandConstants;
 public class CustomExecutionListener implements IExecutionListener {
 
     private final String[] postExecCommands = new String[]{
-    	IWorkbenchCommandConstants.FILE_SAVE,
+        IWorkbenchCommandConstants.FILE_SAVE,
         IWorkbenchCommandConstants.EDIT_COPY,
         IWorkbenchCommandConstants.EDIT_CUT,
         IWorkbenchCommandConstants.EDIT_PASTE,
@@ -40,36 +40,41 @@ public class CustomExecutionListener implements IExecutionListener {
 
     @Override
     public void preExecute(String commandId, ExecutionEvent event) {
-    	// WakaTime.log.debug("CustomExecutionListener.preExecute: " + commandId);
-    	if (!Arrays.asList(buildCommands).contains(commandId)) return;
+        // Logger.debug("CustomExecutionListener.preExecute: " + commandId);
+        if (!Arrays.asList(buildCommands).contains(commandId)) return;
 
-    	WakaTime.getDefault().debouncer.debounce("manual-build", new Runnable() {
-    	    @Override public void run() {
+        final Heartbeat heartbeat = WakaTime.getHeartbeat(null, false, true);
+        WakaTime.getDefault().debouncer.debounce("manual-build", new Runnable() {
+            @Override public void run() {
                 // TODO: set a periodic timer to send heartbeats for long builds when user left for coffee
-    	        WakaTime.getDefault().isBuilding = true;
-    	        WakaTime.handleActivity(null, false);
-    	    }
-    	}, 3, TimeUnit.SECONDS);
+                WakaTime.getDefault().isBuilding = true;
+                WakaTime.processHeartbeat(heartbeat);
+                WakaTime.startWatchingBuild();
+            }
+        }, WakaTime.BUILD_THRESHOLD, TimeUnit.SECONDS);
     }
 
     @Override
     public void postExecuteSuccess(String commandId, Object returnValue) {
-        // WakaTime.log.debug("CustomExecutionListener.postExecuteSuccess: " + commandId);
+        // Logger.debug("CustomExecutionListener.postExecuteSuccess: " + commandId);
         if (!Arrays.asList(postExecCommands).contains(commandId)) return;
 
         final boolean isWrite = commandId.equals(IWorkbenchCommandConstants.FILE_SAVE);
-        
+
         if (Arrays.asList(buildCommands).contains(commandId)) {
-        	WakaTime.getDefault().debouncer.debounce("manual-build", new Runnable() {
-        	    @Override public void run() {
-        	        WakaTime.getDefault().isBuilding = false;
-        	        WakaTime.handleActivity(null, isWrite);
-        	    }
-        	}, 1, TimeUnit.MILLISECONDS);
-        	return;
+            final Heartbeat heartbeat = WakaTime.getHeartbeat(null, isWrite, false);
+            WakaTime.getDefault().debouncer.debounce("manual-build", new Runnable() {
+                @Override public void run() {
+                    WakaTime.getDefault().isBuilding = false;
+                    WakaTime.processHeartbeat(heartbeat);
+                    WakaTime.stopWatchingBuild();
+                }
+            }, 1, TimeUnit.MILLISECONDS);
+            return;
         }
 
-        WakaTime.handleActivity(null, isWrite);
+        Heartbeat heartbeat = WakaTime.getHeartbeat(null, isWrite);
+        WakaTime.processHeartbeat(heartbeat);
     }
 
     @Override
@@ -77,14 +82,16 @@ public class CustomExecutionListener implements IExecutionListener {
 
     @Override
     public void postExecuteFailure(String commandId, ExecutionException exception) {
-    	// WakaTime.log.debug("CustomExecutionListener.postExecuteFailure: " + commandId);
-    	if (!Arrays.asList(buildCommands).contains(commandId)) return;
+        // Logger.debug("CustomExecutionListener.postExecuteFailure: " + commandId);
+        if (!Arrays.asList(buildCommands).contains(commandId)) return;
 
-    	WakaTime.getDefault().debouncer.debounce("manual-build", new Runnable() {
-    	    @Override public void run() {
-    	        WakaTime.getDefault().isBuilding = false;
-    	        WakaTime.handleActivity(null, false);
-    	    }
-    	}, 1, TimeUnit.MILLISECONDS);
+        final Heartbeat heartbeat = WakaTime.getHeartbeat(null, false, false);
+        WakaTime.getDefault().debouncer.debounce("manual-build", new Runnable() {
+            @Override public void run() {
+                WakaTime.getDefault().isBuilding = false;
+                WakaTime.processHeartbeat(heartbeat);
+                WakaTime.stopWatchingBuild();
+            }
+        }, 1, TimeUnit.MILLISECONDS);
     }
 }
