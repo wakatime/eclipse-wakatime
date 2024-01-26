@@ -1,3 +1,12 @@
+/* ==========================================================
+File:        CustomDocumentListener.java
+Description: Automatic time tracking for Eclipse.
+Maintainer:  WakaTime <support@wakatime.com>
+License:     BSD, see LICENSE for more details.
+Website:     https://wakatime.com/
+===========================================================*/
+
+
 package com.wakatime.eclipse.plugin;
 
 import org.eclipse.jface.text.DocumentEvent;
