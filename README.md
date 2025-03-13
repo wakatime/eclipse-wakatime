@@ -38,4 +38,4 @@ Note: WakaTime on OS X depends on Xcode being installed to work correctly.
 
 ## Troubleshooting
 
-For troubleshooting information, see [wakatime/wakatime#troubleshooting](https://github.com/wakatime/wakatime#troubleshooting).
+For troubleshooting information, see [wakatime/wakatime#troubleshooting](https://github.com/wakatime/wakatime-cli#troubleshooting).
