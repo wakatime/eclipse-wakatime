@@ -1,5 +1,6 @@
+# eclipse-wakatime
 
-automatically generated from your programming activity.
+Metrics, insights, and time tracking automatically generated from your programming activity.
 
 
 ## Installation
