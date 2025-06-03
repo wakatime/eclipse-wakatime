@@ -1,9 +1,9 @@
 ---
-name: Feature request
+name: Request_about.md
 about: Suggest an idea for this project
 title: ''
-labels: ''
-assignees: ''
+labels: documentation
+assignees: T-R0052
 
 ---
 
