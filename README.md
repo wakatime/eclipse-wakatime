@@ -1,6 +1,5 @@
-# eclipse-wakatime
 
-Metrics, insights, and time tracking automatically generated from your programming activity.
+automatically generated from your programming activity.
 
 
 ## Installation
@@ -38,4 +37,4 @@ Note: WakaTime on OS X depends on Xcode being installed to work correctly.
 
 ## Troubleshooting
 
-For troubleshooting information, see [wakatime/wakatime-cli#troubleshooting](https://github.com/wakatime/wakatime-cli#troubleshooting).
+For troubleshooting information, see [wakatime/wakatime#troubleshooting](https://github.com/wakatime/wakatime#troubleshooting).
