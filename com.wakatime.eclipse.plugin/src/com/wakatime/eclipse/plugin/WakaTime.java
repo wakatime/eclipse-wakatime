@@ -189,8 +189,7 @@ public class WakaTime extends AbstractUIPlugin implements IStartup {
 
     public static void promptForApiKey(IWorkbenchWindow window) {
         String apiKey = ConfigFile.get("settings", "api_key", false);
-        InputDialog dialog = new InputDialog(window.getShell(),
-            "WakaTime API Key", "Enter your api key from http://wakatime.com/api-key", apiKey, null);
+        InputDialog dialog = new ApiKeyDialog(window.getShell(), apiKey);
         if (dialog.open() == IStatus.OK) {
           apiKey = dialog.getValue();
           ConfigFile.set("settings", "api_key", false, apiKey);
